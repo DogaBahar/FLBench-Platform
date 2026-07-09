@@ -57,9 +57,8 @@ adapters are responsible for that shift, not the normalizer.
 
 ## Prerequisites
 
-- Docker + Docker Compose
-- Node 18+ / npm (for the frontend; it isn't part of `docker-compose.yml`)
-- ~a few GB free disk (three separate CPU-only PyTorch images)
+- Docker 
+- Node 18+ / npm (for the frontend)
 
 ## Quickstart (from scratch)
 
@@ -247,8 +246,6 @@ Then:
   `psutil.net_connections()` snapshot taken at the moment aggregation
   finishes in that container — a directional signal of connection churn, not
   exact per-connection accounting scoped to FL traffic specifically.
-- `iowait_time` is always `0` across all three adapters — the field exists in
-  the schema but isn't wired to a real measurement yet.
 - FedML prints a non-fatal S3 connectivity diagnostic failure at every server
   startup (dummy AWS credentials). This is expected and harmless — this setup
   uses the GRPC backend, not S3, for actual model transfer.
