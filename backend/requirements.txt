@@ -1,0 +1,11 @@
+Flask==3.0.0
+SQLAlchemy==2.0.23
+psycopg2-binary==2.9.9
+celery==5.3.6
+redis==5.0.1
+docker==7.1.0
+pydantic==2.5.2
+marshmallow==3.20.1
+python-dotenv==1.0.0
+flask-cors
+matplotlib==3.8.2

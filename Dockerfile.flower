@@ -1,0 +1,17 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install git for Hugging Face datasets
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir \
+    --index-url https://download.pytorch.org/whl/cpu \
+    torch torchvision && \
+    pip install --no-cache-dir \
+    datasets \
+    psutil \
+    "flwr~=1.8.0"
+
+# Set the entrypoint to bash so our orchestrator can run arbitrary commands
+CMD ["/bin/bash"]
