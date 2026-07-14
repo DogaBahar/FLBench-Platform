@@ -40,9 +40,6 @@ def start_benchmark():
     try:
         validated = BenchmarkRequestSchema(**raw_data)
     except ValidationError as e:
-        # e.errors() can embed the raw exception object (ctx.error) for
-        # validators that raise ValueError, which jsonify can't serialize --
-        # e.json() is pydantic's own guaranteed-JSON-safe serialization.
         return error_response("Invalid benchmark configuration", 400, details=json.loads(e.json()))
 
     try:

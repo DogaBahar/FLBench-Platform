@@ -13,6 +13,8 @@ class FedMLAdapter(FLFrameworkAdapter):
         data_settings = ui_config.get("data_simulation", {})
         
         num_rounds = fed_settings.get("rounds", 3)
+        strategy_name = fed_settings.get("strategy", "FedAvg")
+        proximal_mu = fed_settings.get("proximal_mu", 0.01) if strategy_name == "FedProx" else 0.0
         epochs = ml_settings.get("epochs", 2)
         batch_size = ml_settings.get("batch_size", 32)
         learning_rate = ml_settings.get("learning_rate", 0.001)
@@ -47,7 +49,7 @@ model_args:
   model: "FlexibleCNN"
 
 train_args:
-  federated_optimizer: "FedAvg"
+  federated_optimizer: "{strategy_name}"
   client_num_in_total: {num_clients}
   client_num_per_round: {num_clients}
   comm_round: {num_rounds}
@@ -55,6 +57,7 @@ train_args:
   batch_size: {batch_size}
   client_optimizer: "{optimizer_name}"
   learning_rate: {learning_rate}
+  fedprox_mu: {proximal_mu}
 
 validation_args:
   frequency_of_the_test: 1
@@ -101,9 +104,15 @@ class DashboardClientTrainer(ClientTrainer):
 
     def train(self, train_data, device, args):
         self.model.to(device)
+
+        # Snapshot the global weights set_model_params() just loaded, before
+        # local training mutates them, for the FedProx proximal term below.
+        mu = {proximal_mu}
+        global_params = [p.detach().clone() for p in self.model.parameters()] if mu > 0 else None
+
         start_time = time.time()
-        
-        train(self.model, self.trainloader, {epochs}, {learning_rate}, "{optimizer_name}")
+
+        train(self.model, self.trainloader, {epochs}, {learning_rate}, "{optimizer_name}", mu=mu, global_params=global_params)
 
         compute_time = time.time() - start_time
         cpu_usage = psutil.cpu_percent(interval=None)

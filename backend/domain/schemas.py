@@ -12,11 +12,9 @@ class MLHyperparameters(BaseModel):
 
 class FederatedSettings(BaseModel):
     rounds: int = Field(default=3, gt=0)
-    # Only FedAvg is actually implemented by any adapter today (see
-    # CustomFedAvg / InTimeAccumulateWeightedAggregator / FedML's FedAvg
-    # config) -- reject anything else rather than silently ignoring it.
-    strategy: Literal["FedAvg"] = "FedAvg"
+    strategy: Literal["FedAvg", "FedProx"] = "FedAvg"
     fraction_fit: float = Field(default=1.0, gt=0, le=1.0)
+    proximal_mu: float = Field(default=0.01, ge=0)
 
 
 class DataSimulation(BaseModel):

@@ -21,6 +21,8 @@ class FlareAdapter(FLFrameworkAdapter):
         data_settings = ui_config.get("data_simulation", {})
         
         num_rounds = fed_settings.get("rounds", 3)
+        strategy_name = fed_settings.get("strategy", "FedAvg")
+        proximal_mu = fed_settings.get("proximal_mu", 0.01) if strategy_name == "FedProx" else 0.0
         epochs = ml_settings.get("epochs", 2)
         batch_size = ml_settings.get("batch_size", 32)
         learning_rate = ml_settings.get("learning_rate", 0.001)
@@ -196,7 +198,12 @@ def main():
             if k in model.state_dict():
                 target_dtype = model.state_dict()[k].dtype
                 model.state_dict()[k].copy_(v.to(dtype=target_dtype))
-            
+
+        # Snapshot the just-received global weights (before local training
+        # mutates them in place) for the FedProx proximal term below.
+        mu = {proximal_mu}
+        global_params = [p.detach().clone() for p in model.parameters()] if mu > 0 else None
+
         if client_id == 0:
             loss, accuracy = test(model, testloader)
             
@@ -229,7 +236,7 @@ def main():
                 }}) + "\\n")
             
         start_time = time.time()
-        train(model, trainloader, {epochs}, {learning_rate}, "{optimizer_name}")
+        train(model, trainloader, {epochs}, {learning_rate}, "{optimizer_name}", mu=mu, global_params=global_params)
         compute_time = time.time() - start_time
 
         state_dict = model.state_dict()

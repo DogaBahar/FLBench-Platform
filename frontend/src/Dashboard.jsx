@@ -20,7 +20,8 @@ function Dashboard() {
     federated_settings: {
       rounds: 3,
       strategy: 'FedAvg',
-      fraction_fit: 1.0
+      fraction_fit: 1.0,
+      proximal_mu: 0.01
     },
     data_simulation: {
       dataset: 'cifar100',
@@ -63,7 +64,11 @@ function Dashboard() {
     } else if (strategy === 'shard') {
       delete cleanConfig.data_simulation.alpha;
     }
-    
+
+    if (cleanConfig.federated_settings.strategy !== 'FedProx') {
+      delete cleanConfig.federated_settings.proximal_mu;
+    }
+
     try {
       const response = await fetch('http://localhost:5001/api/benchmark', {
         method: 'POST',
@@ -181,12 +186,19 @@ function Dashboard() {
               <strong>Strategy:</strong> <br/>
               <select value={config.federated_settings.strategy} disabled={isDeploying} onChange={e => updateConfig('federated_settings', 'strategy', e.target.value)} style={{ padding: '0.5rem', marginTop: '0.25rem', width: '100%' }}>
                 <option value="FedAvg">FedAvg</option>
+                <option value="FedProx">FedProx</option>
               </select>
             </label>
             <label>
               <strong>Fraction Fit:</strong> <br/>
               <input type="number" step="0.1" max="1" min="0.1" disabled={isDeploying} value={config.federated_settings.fraction_fit} onChange={e => updateConfig('federated_settings', 'fraction_fit', parseFloat(e.target.value))} style={{ padding: '0.5rem', marginTop: '0.25rem', width: '80%' }}/>
             </label>
+            {config.federated_settings.strategy === 'FedProx' && (
+              <label>
+                <strong>Proximal Mu:</strong> <br/>
+                <input type="number" step="0.01" min="0" disabled={isDeploying} value={config.federated_settings.proximal_mu} onChange={e => updateConfig('federated_settings', 'proximal_mu', parseFloat(e.target.value))} style={{ padding: '0.5rem', marginTop: '0.25rem', width: '100%' }}/>
+              </label>
+            )}
           </div>
         </section>
 

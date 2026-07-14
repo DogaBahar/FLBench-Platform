@@ -14,6 +14,8 @@ class FlowerAdapter(FLFrameworkAdapter):
         
         num_rounds = fed_settings.get("rounds", 3)
         fraction_fit = fed_settings.get("fraction_fit", 1.0)
+        strategy_name = fed_settings.get("strategy", "FedAvg")
+        proximal_mu = fed_settings.get("proximal_mu", 0.01) if strategy_name == "FedProx" else 0.0
         epochs = ml_settings.get("epochs", 2)
         batch_size = ml_settings.get("batch_size", 32)
         learning_rate = ml_settings.get("learning_rate", 0.001)
@@ -33,6 +35,12 @@ class FlowerAdapter(FLFrameworkAdapter):
         with open(os.path.join(output_dir, "config.json"), "w") as f:
             json.dump(config, f, indent=2)
 
+        # Flower's FedProx only differs from FedAvg by injecting `proximal_mu`
+        # into each client's fit() config -- the client (below) is what
+        # actually applies the proximal term during local training.
+        strategy_base_class = "FedProx" if strategy_name == "FedProx" else "FedAvg"
+        proximal_mu_kwarg = f",\n        proximal_mu={proximal_mu}" if strategy_name == "FedProx" else ""
+
         server_code = f"""
 import flwr as fl
 import json
@@ -44,7 +52,7 @@ def weighted_average(metrics):
     examples = [num_examples for num_examples, _ in metrics]
     return {{"accuracy": sum(accuracies) / sum(examples)}}
 
-class CustomFedAvg(fl.server.strategy.FedAvg):
+class CustomStrategy(fl.server.strategy.{strategy_base_class}):
     def aggregate_fit(self, rnd, results, failures):
         start_time = time.time()
         aggregated_parameters, aggregated_metrics = super().aggregate_fit(rnd, results, failures)
@@ -81,11 +89,11 @@ class CustomFedAvg(fl.server.strategy.FedAvg):
         return aggregated_loss, aggregated_metrics
 
 if __name__ == "__main__":
-    strategy = CustomFedAvg(
+    strategy = CustomStrategy(
         fraction_fit={fraction_fit},
         min_fit_clients={num_clients},
         min_available_clients={num_clients},
-        evaluate_metrics_aggregation_fn=weighted_average
+        evaluate_metrics_aggregation_fn=weighted_average{proximal_mu_kwarg}
     )
 
     run_start = time.time()
@@ -154,9 +162,15 @@ class FLClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.set_parameters(parameters)
         start_time = time.time()
-        
-        train(self.model, self.trainloader, {epochs}, {learning_rate}, "{optimizer_name}")
-        
+
+        # proximal_mu is only present in config when the server used the
+        # FedProx strategy (Flower's FedProx.configure_fit() injects it) --
+        # absent (i.e. plain FedAvg) means mu defaults to 0, a no-op below.
+        mu = config.get("proximal_mu", 0.0)
+        global_params = [p.detach().clone() for p in self.model.parameters()] if mu > 0 else None
+
+        train(self.model, self.trainloader, {epochs}, {learning_rate}, "{optimizer_name}", mu=mu, global_params=global_params)
+
         compute_time = time.time() - start_time
         rnd = config.get("server_round", getattr(self, "_round_counter", 0) + 1)
         self._round_counter = rnd 

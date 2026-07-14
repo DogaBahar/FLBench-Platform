@@ -1,12 +1,12 @@
 # FL Benchmark Platform
 
-A control plane for running standardized federated learning benchmarks across
+FL Benchmark Platform is a framework-agnostic benchmarking system for evaluating federated learning frameworks under identical experimental conditions. A control runs standardized federated learning benchmarks across
 multiple FL frameworks — **Flower**, **NVIDIA FLARE**, and **FedML** — against
 the same datasets and hyperparameters, and comparing them side by side in one
 dashboard (accuracy/loss curves, per-client CPU/RAM/compute time, server
 aggregation time, TCP connection churn, wall-clock time).
 
-You configure a run once (framework, dataset, number of clients, FL
+The developer who wishes to use a framework configures a run once (framework, dataset, number of clients, FL
 hyperparameters) and the platform generates that framework's native
 server/client scripts on the fly, launches one Docker container per
 participant, and normalizes whatever each framework logs into one common
@@ -56,10 +56,6 @@ possibly different containers) end up contributing to one combined
 - `distributions` — from `"distribution"` lines (per-client label counts, for the data-skew chart)
 - `global_metrics.wall_clock_time_seconds` — from a single `"wall_clock_time"` line
 
-Round numbers are normalized to be **1-indexed across all three frameworks**
-in these logs, even though FedML's own internal round counter is 0-indexed —
-adapters are responsible for that shift, not the normalizer.
-
 Once a run reaches `COMPLETED`, `services/tasks.py` also archives one
 `BenchmarkMetric` row per round into Postgres (accuracy/loss, and the
 per-round client average of CPU/RAM/compute time/comm bytes) via this same
@@ -72,10 +68,9 @@ even after `$SHARED_RUN_DIR` is cleaned up, not as the API's read path.
 - Docker 
 - Node 18+ / npm (for the frontend)
 
-## Quickstart (from scratch)
+## Quickstart 
 
-**1. Build the three FL framework images.** These aren't declared in
-`docker-compose.yml` — they're built independently and referenced by tag name
+**1. Build the three FL framework images.** They're built independently and referenced by tag name
 (`benchmark-fedml:latest`, `benchmark-flare:latest`, `benchmark-flower:latest`)
 from each adapter's `get_docker_commands()`, then launched dynamically by the
 orchestrator:
@@ -92,18 +87,6 @@ docker build -f Dockerfile.flower -t benchmark-flower:latest .
 docker compose up -d --build
 ```
 
-`backend/` is bind-mounted into both `backend` and `celery_worker`, so editing
-adapter/Python code doesn't require a rebuild — just a restart (see
-Troubleshooting). `/var/run/docker.sock` is mounted into `celery_worker` so it
-can launch the per-run FL containers as sibling containers on the host's
-Docker daemon.
-
-Both containers run `backend/docker-entrypoint.sh` before their actual command,
-which applies Alembic migrations first (see "Migrations" below).
-`celery_worker` depends on `backend`'s healthcheck (`GET /api/health`) rather
-than starting in parallel with it — this is deliberate, so the two containers
-never both try to apply the same migration at once on a cold `docker compose up`.
-
 **3. Start the frontend:**
 
 ```bash
@@ -119,7 +102,7 @@ number of clients, and hyperparameters, then click **Deploy Tasks & Start
 Benchmark**. The UI polls `GET /api/runs/<run_id>` every 3s and jumps to the
 *Benchmark Results* tab once `status` becomes `COMPLETED`.
 
-Or skip the UI and call the API directly:
+Or call the API directly:
 
 ```bash
 curl -X POST http://localhost:5001/api/benchmark \
@@ -146,18 +129,6 @@ run is ever created — it never reaches Celery/Docker.
 
 ## Migrations
 
-Schema is managed by Alembic (`backend/migrations/`), not
-`Base.metadata.create_all()`. `backend/scripts/migrate.py` runs automatically
-at container startup (via `docker-entrypoint.sh`, before the actual `backend`/
-`celery_worker` command) and picks the right action itself:
-
-- Fresh database: `alembic upgrade head`.
-- An existing pre-Alembic database (i.e. one created by an older version of
-  this platform via `create_all()`): its schema already matches revision
-  head, so it's adopted via `alembic stamp head` instead of replaying DDL
-  that would fail on tables that already exist. You will *not* lose existing
-  run history switching to this version.
-
 To add a schema change: edit `backend/domain/models.py`, then generate a
 revision against a real (ideally empty) Postgres —
 
@@ -169,25 +140,6 @@ docker run --rm --network <a-network-both-containers-share> \
   --entrypoint alembic fl-backend-gen revision --autogenerate -m "describe the change"
 ```
 
-— then review the generated file under `backend/migrations/versions/` before
-committing it (autogenerate doesn't always get everything right, e.g. column
-renames show up as a drop+add).
-
-## Where things live
-
-- **Run configs, generated scripts, logs, metrics**: `$SHARED_RUN_DIR/<run_id>`
-  on the host — default `/tmp/fl_benchmark_runs`, set via the `SHARED_RUN_DIR`
-  env var in `docker-compose.yml`. One directory per run; inspecting it
-  directly (`config.json`, `metrics.jsonl`, and for FLARE, the full NVFlare
-  `simulator_workdir/.../log.txt`) is usually the fastest way to debug a
-  failed run — faster than re-running with extra logging.
-- **HuggingFace dataset / torch cache**: `$DATA_CACHE_DIR`, default
-  `/tmp/fl_benchmark_data` — shared across runs so CIFAR-100/FEMNIST aren't
-  re-downloaded every time.
-- **Run metadata** (framework, dataset, status, timestamps) and **per-round
-  metrics archive** (`BenchmarkMetric`, written once a run reaches
-  `COMPLETED`): Postgres, via `backend/domain/models.py`.
-
 ## Supported frameworks
 
 | `framework` value | Library                 | Notes |
@@ -195,6 +147,13 @@ renames show up as a drop+add).
 | `flower`  | `flwr~=1.8.0`   | Classic `NumPyClient`/`start_server` API. Pinned below Flower 1.13, where that API is deprecated in favor of the SuperLink/SuperNode architecture the adapter doesn't target. |
 | `nvflare` | `nvflare~=2.4.0`| Runs via `nvflare simulator`; **one container** hosts the server and all simulated client sites (unlike the other two, which get one container per participant). |
 | `fedml`   | `fedml`         | Cross-silo, horizontal, GRPC backend; one container per participant, IP table built from `RUN_ID` at container start. |
+
+## Supported averaging strategies
+
+| `strategy` value | Notes |
+|---|---|
+| `FedAvg` | Plain weighted-average aggregation (the default). |
+| `FedProx` | [Li et al., 2018](https://arxiv.org/abs/1812.06127) — adds a `(proximal_mu / 2) * \|\|w - w_global\|\|^2` penalty to each client's *local* training loss, pulling local updates back toward the global model each round. 
 
 ## Supported datasets
 
@@ -237,6 +196,14 @@ renames show up as a drop+add).
      of what the underlying framework calls round 0 internally (see FedML's
      `aggregate()`/`train()` for the `+1` shift pattern if the framework you're
      adding is 0-indexed internally).
+   - **For `FedProx` parity**: right after your generated client code applies
+     the received global weights to the local model (before calling
+     `train(...)`), snapshot `global_params = [p.detach().clone() for p in
+     model.parameters()]` and pass it plus `mu=<proximal_mu, or 0.0 for
+     FedAvg>` into `train(...)` — see any existing adapter's client code for
+     the exact pattern. `mu=0.0`/`global_params=None` is a guaranteed no-op,
+     so this is safe to always wire in even if you only support `FedAvg`
+     initially.
 2. **Register it** in `backend/adapters/factory.py`'s `_adapters` dict.
 3. **Write a `Dockerfile.<name>`** in the project root (mirror the existing
    three: `python:3.10-slim`, `git` for HF `datasets`, CPU-only
@@ -246,15 +213,12 @@ renames show up as a drop+add).
    it). Build it as `benchmark-<name>:latest` to match what
    `get_docker_commands()` returns.
 4. **Add the option** to the `<select>` in `frontend/src/Dashboard.jsx`.
-5. Before considering it done, actually run a benchmark end-to-end and open
-   the run's `metrics.jsonl` on disk (see "Where things live" above) — a
-   framework integration that merely doesn't crash on round 1 is not the same
-   as one that reports correct data for every round.
 
 ## Adding a new dataset
 
 Create `backend/datasets/<name>/` with:
-- `model.py` — `get_model()` factory, `train(model, loader, epochs, lr, optimizer_name)`,
+- `model.py` — `get_model()` factory, `train(model, loader, epochs, lr,
+  optimizer_name, mu=0.0, global_params=None)`,
   `test(model, loader) -> (loss, accuracy)`. Existing datasets use a shared
   `FlexibleCNN(in_channels, num_classes)` architecture — reuse it unless you
   have a reason not to.
@@ -312,15 +276,6 @@ Then:
 - FedML prints a non-fatal S3 connectivity diagnostic failure at every server
   startup (dummy AWS credentials). This is expected and harmless — this setup
   uses the GRPC backend, not S3, for actual model transfer.
-- `$DATA_CACHE_DIR` (the HuggingFace/torch cache) is shared across all client
-  containers of a run with no download coordination between them. On a fully
-  cold cache, multiple clients racing to download/prepare the same dataset
-  for the first time can corrupt each other's `.incomplete` HuggingFace
-  `datasets` cache entry and crash. `run_benchmark_task`'s auto-retry usually
-  recovers on the next attempt (the failed download is generally cleaned up
-  by the time it retries), but if it doesn't, clear the affected dataset's
-  directory under `$DATA_CACHE_DIR/huggingface/` and retry manually. This
-  doesn't recur once the cache is warm.
 - `container.wait()` in `DockerOrchestrator` has no timeout, so a genuinely
   hung run (rather than a crashed one) will block its Celery worker slot
   indefinitely rather than being marked `FAILED`. There's no principled
