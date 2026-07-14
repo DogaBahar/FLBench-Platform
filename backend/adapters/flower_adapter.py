@@ -161,8 +161,10 @@ class FLClient(fl.client.NumPyClient):
         rnd = config.get("server_round", getattr(self, "_round_counter", 0) + 1)
         self._round_counter = rnd 
         
-        log_client_metrics(f"client_{{CLIENT_ID}}", rnd, compute_time)
-        return self.get_parameters(config), len(self.trainloader.dataset), {{}}
+        updated_parameters = self.get_parameters(config)
+        comm_mb = sum(p.nbytes for p in updated_parameters) / (1024 * 1024)
+        log_client_metrics(f"client_{{CLIENT_ID}}", rnd, compute_time, comm_mb)
+        return updated_parameters, len(self.trainloader.dataset), {{}}
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
@@ -196,10 +198,10 @@ if __name__ == "__main__":
 import json
 import psutil
 
-def log_client_metrics(client_id, round_num, compute_time):
+def log_client_metrics(client_id, round_num, compute_time, comm_mb):
     cpu_usage = psutil.cpu_percent(interval=None)
     ram_usage = psutil.Process().memory_info().rss / (1024 * 1024)
-    
+
     metric = {
         "type": "client_metric",
         "client_id": client_id,
@@ -207,7 +209,7 @@ def log_client_metrics(client_id, round_num, compute_time):
         "cpu": cpu_usage,
         "ram": ram_usage,
         "time": compute_time,
-        "comm_mb": 1.2,
+        "comm_mb": comm_mb,
         "iowait": 0.0
     }
     with open("metrics.jsonl", "a") as f:

@@ -9,6 +9,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+RUN chmod +x docker-entrypoint.sh
+
+# Runs Alembic migrations (see scripts/migrate.py) before either process below starts.
+ENTRYPOINT ["./docker-entrypoint.sh"]
 
 # Default command (will be overridden by docker-compose for celery)
 CMD ["python", "main.py"]

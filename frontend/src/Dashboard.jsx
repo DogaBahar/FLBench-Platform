@@ -113,7 +113,16 @@ function Dashboard() {
         }, 3000); // Check every 3 seconds
 
       } else {
-        setStatus('Error deploying tasks.');
+        let message = 'Error deploying tasks.';
+        try {
+          const errData = await response.json();
+          if (errData?.error?.message) {
+            message = errData.error.message;
+          }
+        } catch (_) {
+          // response body wasn't JSON -- keep the generic message
+        }
+        setStatus(`Error: ${message}`);
         setIsDeploying(false);
       }
     } catch (error) {
@@ -172,7 +181,6 @@ function Dashboard() {
               <strong>Strategy:</strong> <br/>
               <select value={config.federated_settings.strategy} disabled={isDeploying} onChange={e => updateConfig('federated_settings', 'strategy', e.target.value)} style={{ padding: '0.5rem', marginTop: '0.25rem', width: '100%' }}>
                 <option value="FedAvg">FedAvg</option>
-                <option value="FedProx">FedProx</option>
               </select>
             </label>
             <label>

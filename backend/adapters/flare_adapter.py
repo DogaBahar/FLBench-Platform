@@ -231,15 +231,17 @@ def main():
         start_time = time.time()
         train(model, trainloader, {epochs}, {learning_rate}, "{optimizer_name}")
         compute_time = time.time() - start_time
-        
-        log_client_metrics(f"client_{{client_id}}", rnd, compute_time)
-        
+
+        state_dict = model.state_dict()
+        comm_mb = sum(v.element_size() * v.nelement() for v in state_dict.values()) / (1024 * 1024)
+        log_client_metrics(f"client_{{client_id}}", rnd, compute_time, comm_mb)
+
         # Send raw torch tensors: PTClientAPILauncherExecutor's own
         # PTToNumpyParamsConverter converts them to numpy for the wire, and
         # calls v.cpu().numpy() itself -- pre-converting here would make it
         # crash with AttributeError on a plain numpy.ndarray.
         output_model = flare.FLModel(
-            params={{k: v.detach().cpu() for k, v in model.state_dict().items()}},
+            params={{k: v.detach().cpu() for k, v in state_dict.items()}},
             meta={{"NUM_STEPS_CURRENT_ROUND": len(trainloader.dataset)}}
         )
         round_start_time = time.time() # Reset for next round tracking
@@ -291,10 +293,10 @@ with open("/app/workspace/metrics.jsonl", "a") as f:
 import json
 import psutil
 
-def log_client_metrics(client_id, round_num, compute_time):
+def log_client_metrics(client_id, round_num, compute_time, comm_mb):
     cpu_usage = psutil.cpu_percent(interval=None)
     ram_usage = psutil.Process().memory_info().rss / (1024 * 1024)
-    
+
     metric = {
         "type": "client_metric",
         "client_id": client_id,
@@ -302,7 +304,7 @@ def log_client_metrics(client_id, round_num, compute_time):
         "cpu": cpu_usage,
         "ram": ram_usage,
         "time": compute_time,
-        "comm_mb": 1.5,
+        "comm_mb": comm_mb,
         "iowait": 0.0
     }
     with open("/app/workspace/metrics.jsonl", "a") as f:

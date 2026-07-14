@@ -1,7 +1,11 @@
+import json
+import logging
 from flask import Blueprint, request, jsonify
+from pydantic import ValidationError
+from core.config import config
 from core.database import db_session
 from domain.models import BenchmarkRun
-from adapters.factory import AdapterFactory
+from domain.schemas import BenchmarkRequestSchema
 from services.tasks import run_benchmark_task
 from telemetry.normalizer import get_run_telemetry
 from datetime import datetime
@@ -9,24 +13,50 @@ import os
 import shutil
 import uuid
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+logger = logging.getLogger(__name__)
+
 bp = Blueprint('api', __name__)
+
+
+@bp.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok"}), 200
+
+
+def error_response(message, status=400, details=None):
+    body = {"error": {"message": message}}
+    if details is not None:
+        body["error"]["details"] = details
+    return jsonify(body), status
+
 
 @bp.route('/benchmark', methods=['POST'])
 def start_benchmark():
+    raw_data = request.get_json(silent=True)
+    if raw_data is None:
+        return error_response("Request body must be valid JSON", 400)
+
     try:
-        raw_data = request.get_json()
-        
-        framework = raw_data.get('framework', 'flower')
-        num_clients = raw_data.get('clients', 3)
-        config = raw_data.get('config', {})
-        
-        try:
-            AdapterFactory.get_adapter(framework)
-        except ValueError as e:
-            return jsonify({"error": str(e)}), 400
+        validated = BenchmarkRequestSchema(**raw_data)
+    except ValidationError as e:
+        # e.errors() can embed the raw exception object (ctx.error) for
+        # validators that raise ValueError, which jsonify can't serialize --
+        # e.json() is pydantic's own guaranteed-JSON-safe serialization.
+        return error_response("Invalid benchmark configuration", 400, details=json.loads(e.json()))
+
+    try:
+        framework = validated.framework
+        num_clients = validated.clients
+        config_dict = validated.config.model_dump(exclude_none=True)
+        payload = {
+            "framework": framework,
+            "clients": num_clients,
+            "config": config_dict,
+        }
 
         # --- Generate Semantic Run ID ---
-        dataset = config.get('data_simulation', {}).get('dataset', 'cifar100')
+        dataset = config_dict["data_simulation"]["dataset"]
         timestamp = datetime.now().strftime("%b%d_%H%M").lower()
         short_hash = str(uuid.uuid4())[:4]
         custom_run_id = f"{framework}-{dataset}-{timestamp}-{short_hash}"
@@ -35,18 +65,18 @@ def start_benchmark():
             id=custom_run_id,  # Override the default UUID here
             framework=framework,
             dataset=dataset,
-            strategy=config.get('federated_settings', {}).get('strategy', 'FedAvg'),
-            rounds=config.get('federated_settings', {}).get('rounds', 3),
-            epochs=config.get('ml_hyperparameters', {}).get('epochs', 2),
-            batch_size=config.get('ml_hyperparameters', {}).get('batch_size', 32),
+            strategy=config_dict["federated_settings"]["strategy"],
+            rounds=config_dict["federated_settings"]["rounds"],
+            epochs=config_dict["ml_hyperparameters"]["epochs"],
+            batch_size=config_dict["ml_hyperparameters"]["batch_size"],
             status="PENDING"
         )
-        
+
         db_session.add(new_run)
         db_session.commit()
 
         # Dispatch the Celery task for background execution
-        run_benchmark_task.delay(new_run.id, raw_data)
+        run_benchmark_task.delay(new_run.id, payload)
 
         return jsonify({
             "message": "Benchmark deployed",
@@ -55,17 +85,17 @@ def start_benchmark():
 
     except Exception as e:
         db_session.rollback()
-        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+        logger.exception("Failed to start benchmark")
+        return error_response("Internal server error", 500, details=str(e))
 
 @bp.route('/runs', methods=['GET'])
 def get_all_runs():
     runs = db_session.query(BenchmarkRun).order_by(BenchmarkRun.started_at.desc()).all()
     return jsonify([run.id for run in runs]), 200
 
-# --- FIX: Combined GET and DELETE into a single, clean route ---
 @bp.route('/runs/<run_id>', methods=['GET', 'DELETE'])
 def handle_specific_run(run_id):
-    
+
     # --- HANDLE DELETE REQUEST ---
     if request.method == 'DELETE':
         # 1. Delete from the Database
@@ -73,17 +103,18 @@ def handle_specific_run(run_id):
         if run:
             db_session.delete(run)
             db_session.commit()
-            
-        # 2. Delete from the File System
-        workspace_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'workspace'))
-        run_dir = os.path.join(workspace_dir, run_id)
-        
+
+        # 2. Delete from the File System (the same directory the adapter/orchestrator
+        # write to and mount into every container -- see core/config.py SHARED_RUN_DIR)
+        run_dir = os.path.join(config.SHARED_RUN_DIR, run_id)
+
         if os.path.exists(run_dir):
             try:
                 shutil.rmtree(run_dir)
             except Exception as e:
-                return jsonify({"error": f"Failed to delete run directory: {str(e)}"}), 500
-                
+                logger.exception("Failed to delete run directory %s", run_dir)
+                return error_response(f"Failed to delete run directory: {str(e)}", 500)
+
         return jsonify({"message": f"Run {run_id} successfully deleted from DB and filesystem."}), 200
 
 
@@ -91,8 +122,8 @@ def handle_specific_run(run_id):
     if request.method == 'GET':
         run = db_session.query(BenchmarkRun).filter(BenchmarkRun.id == run_id).first()
         if not run:
-            return jsonify({"error": "Run not found"}), 404
-            
+            return error_response("Run not found", 404)
+
         response_data = {
             "run_id": run.id,
             "framework": run.framework,
@@ -103,9 +134,9 @@ def handle_specific_run(run_id):
                 "rounds": run.rounds
             }
         }
-        
+
         # --- Always fetch telemetry regardless of run status ---
         telemetry_data = get_run_telemetry(run_id)
         response_data.update(telemetry_data)
-            
+
         return jsonify(response_data), 200
