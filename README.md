@@ -38,8 +38,9 @@ backend/ (Flask API, :5001)
         | Celery task queued via Redis, Docker SDK (docker.sock mounted into celery_worker)
         v
 Docker (sibling containers on a dedicated bridge network, one per run)
-  run_<id>_server, run_<id>_client_1..N   (Flower / FedML)
-  run_<id>_server                          (FLARE: runs `nvflare simulator`, hosts all sites in one container)
+  run_<id>_server, run_<id>_client_1..N   (FedML)
+  run_<id>_server                          (Flower: Simulation Engine, all clients run in-process via Ray;
+                                             FLARE: runs `nvflare simulator`, hosts all sites in one container)
 ```
 
 Each run gets its own directory under `$SHARED_RUN_DIR/<run_id>` on the host,
@@ -144,8 +145,8 @@ docker run --rm --network <a-network-both-containers-share> \
 
 | `framework` value | Library                 | Notes |
 |---|---|---|
-| `flower`  | `flwr~=1.8.0`   | Classic `NumPyClient`/`start_server` API. Pinned below Flower 1.13, where that API is deprecated in favor of the SuperLink/SuperNode architecture the adapter doesn't target. |
-| `nvflare` | `nvflare~=2.4.0`| Runs via `nvflare simulator`; **one container** hosts the server and all simulated client sites (unlike the other two, which get one container per participant). |
+| `flower`  | `flwr[simulation]==1.32.1` | Current `ServerApp`/`ClientApp` message-passing API (`ArrayRecord`/`MetricRecord`/`RecordDict`), run via the **Simulation Engine** (`flwr run . local-simulation`) -- all clients run in-process as Ray actors inside **one container**, not one container per client (see "Known limitations" for why Deployment Engine, which would preserve per-container isolation, isn't used). `pyproject.toml`'s `dependencies` must stay `[]` -- Flower auto-provisions an isolated per-run environment via `uv sync` for anything declared there, which silently tries to reinstall torch etc. from scratch even though the image already has it. |
+| `nvflare` | `nvflare~=2.4.0`| Runs via `nvflare simulator`; **one container** hosts the server and all simulated client sites. |
 | `fedml`   | `fedml`         | Cross-silo, horizontal, GRPC backend; one container per participant, IP table built from `RUN_ID` at container start. |
 
 ## Supported averaging strategies
@@ -206,12 +207,17 @@ docker run --rm --network <a-network-both-containers-share> \
      initially.
 2. **Register it** in `backend/adapters/factory.py`'s `_adapters` dict.
 3. **Write a `Dockerfile.<name>`** in the project root (mirror the existing
-   three: `python:3.10-slim`, `git` for HF `datasets`, CPU-only
-   torch/torchvision, `psutil`, plus the framework package — pin a version
-   deliberately rather than trusting "latest," and verify the exact API you
-   generate scripts against actually exists in that version before trusting
-   it). Build it as `benchmark-<name>:latest` to match what
-   `get_docker_commands()` returns.
+   three: a `python:3.1x-slim` base matching whatever your framework version
+   requires -- FLARE/FedML use `3.10-slim`, Flower's current version needs
+   `3.11-slim` -- `git` for HF `datasets`, CPU-only torch/torchvision,
+   `psutil`, plus the framework package — pin a version deliberately rather
+   than trusting "latest," and verify the exact API you generate scripts
+   against actually exists in that version before trusting it — introspect
+   the real installed package (`help()`/`dir()`/`inspect.signature()` inside a
+   throwaway container) rather than relying on documentation alone, since it
+   can lag or be paraphrased incorrectly by tooling; see the Flower adapter's
+   history for how much this mattered in practice). Build it as
+   `benchmark-<name>:latest` to match what `get_docker_commands()` returns.
 4. **Add the option** to the `<select>` in `frontend/src/Dashboard.jsx`.
 
 ## Adding a new dataset
@@ -280,3 +286,21 @@ Then:
   hung run (rather than a crashed one) will block its Celery worker slot
   indefinitely rather than being marked `FAILED`. There's no principled
   default timeout given `rounds`/`epochs` are user-configurable per run.
+- **Flower runs in one container, not one per client** (unlike FedML). Flower's
+  Deployment Engine (persistent `SuperLink` + one `SuperNode` container per
+  client) was tried first, to keep true per-container resource isolation
+  consistent with FedML -- SuperLink/SuperNode connected and a run submitted
+  successfully, but the ClientApp task never actually dispatched (no error,
+  indefinite hang) in live testing against `flwr==1.32.1`, for reasons not
+  fully diagnosed. The Simulation Engine (this adapter's actual approach) was
+  used instead. If you want to revisit Deployment Engine: the hang reproduced
+  even in the simplest possible 2-node setup, past node registration and run
+  submission, with `flower-superexec`'s `--plugin-type clientapp` subprocess
+  confirmed running and listening but never invoking `client_app.py`.
+- Also learned the hard way debugging the above: Flower now auto-migrates
+  legacy `[tool.flwr.federations]` `pyproject.toml` entries into a separate
+  `~/.flwr/config.toml` on first `flwr run` in a given container, *mutating
+  the source file in place* to comment that section out. Harmless here since
+  every run gets a freshly generated `pyproject.toml`, but confusing if you're
+  ever inspecting `$SHARED_RUN_DIR/<run_id>/pyproject.toml` after the fact and
+  wondering why the federation section is commented out.
