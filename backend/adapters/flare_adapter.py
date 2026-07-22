@@ -21,6 +21,8 @@ class FlareAdapter(FLFrameworkAdapter):
         data_settings = ui_config.get("data_simulation", {})
         
         num_rounds = fed_settings.get("rounds", 3)
+        strategy_name = fed_settings.get("strategy", "FedAvg")
+        proximal_mu = fed_settings.get("proximal_mu", 0.01) if strategy_name == "FedProx" else 0.0
         epochs = ml_settings.get("epochs", 2)
         batch_size = ml_settings.get("batch_size", 32)
         learning_rate = ml_settings.get("learning_rate", 0.001)
@@ -196,7 +198,12 @@ def main():
             if k in model.state_dict():
                 target_dtype = model.state_dict()[k].dtype
                 model.state_dict()[k].copy_(v.to(dtype=target_dtype))
-            
+
+        # Snapshot the just-received global weights (before local training
+        # mutates them in place) for the FedProx proximal term below.
+        mu = {proximal_mu}
+        global_params = [p.detach().clone() for p in model.parameters()] if mu > 0 else None
+
         if client_id == 0:
             loss, accuracy = test(model, testloader)
             
@@ -229,17 +236,19 @@ def main():
                 }}) + "\\n")
             
         start_time = time.time()
-        train(model, trainloader, {epochs}, {learning_rate}, "{optimizer_name}")
+        train(model, trainloader, {epochs}, {learning_rate}, "{optimizer_name}", mu=mu, global_params=global_params)
         compute_time = time.time() - start_time
-        
-        log_client_metrics(f"client_{{client_id}}", rnd, compute_time)
-        
+
+        state_dict = model.state_dict()
+        comm_mb = sum(v.element_size() * v.nelement() for v in state_dict.values()) / (1024 * 1024)
+        log_client_metrics(f"client_{{client_id}}", rnd, compute_time, comm_mb)
+
         # Send raw torch tensors: PTClientAPILauncherExecutor's own
         # PTToNumpyParamsConverter converts them to numpy for the wire, and
         # calls v.cpu().numpy() itself -- pre-converting here would make it
         # crash with AttributeError on a plain numpy.ndarray.
         output_model = flare.FLModel(
-            params={{k: v.detach().cpu() for k, v in model.state_dict().items()}},
+            params={{k: v.detach().cpu() for k, v in state_dict.items()}},
             meta={{"NUM_STEPS_CURRENT_ROUND": len(trainloader.dataset)}}
         )
         round_start_time = time.time() # Reset for next round tracking
@@ -291,10 +300,10 @@ with open("/app/workspace/metrics.jsonl", "a") as f:
 import json
 import psutil
 
-def log_client_metrics(client_id, round_num, compute_time):
+def log_client_metrics(client_id, round_num, compute_time, comm_mb):
     cpu_usage = psutil.cpu_percent(interval=None)
     ram_usage = psutil.Process().memory_info().rss / (1024 * 1024)
-    
+
     metric = {
         "type": "client_metric",
         "client_id": client_id,
@@ -302,7 +311,7 @@ def log_client_metrics(client_id, round_num, compute_time):
         "cpu": cpu_usage,
         "ram": ram_usage,
         "time": compute_time,
-        "comm_mb": 1.5,
+        "comm_mb": comm_mb,
         "iowait": 0.0
     }
     with open("/app/workspace/metrics.jsonl", "a") as f:

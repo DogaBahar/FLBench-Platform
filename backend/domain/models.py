@@ -9,7 +9,7 @@ class BenchmarkRun(Base):
     __tablename__ = 'benchmark_runs'
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    framework = Column(String(50), nullable=False)    # 'flower', 'flare', 'openfl'
+    framework = Column(String(50), nullable=False)    # 'flower', 'nvflare', 'fedml'
     dataset = Column(String(50), nullable=False)      # 'cifar100', 'femnist'
     strategy = Column(String(50), nullable=False)     # 'FedAvg', etc.
     rounds = Column(Integer, nullable=False)

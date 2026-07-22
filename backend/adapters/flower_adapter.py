@@ -5,20 +5,22 @@ from typing import Dict, Any, List
 from adapters.base import FLFrameworkAdapter
 
 class FlowerAdapter(FLFrameworkAdapter):
-    
+
     def generate_configs(self, config: Dict[str, Any], output_dir: str) -> None:
         ui_config = config.get("config", {})
         fed_settings = ui_config.get("federated_settings", {})
         ml_settings = ui_config.get("ml_hyperparameters", {})
         data_settings = ui_config.get("data_simulation", {})
-        
+
         num_rounds = fed_settings.get("rounds", 3)
         fraction_fit = fed_settings.get("fraction_fit", 1.0)
+        strategy_name = fed_settings.get("strategy", "FedAvg")
+        proximal_mu = fed_settings.get("proximal_mu", 0.01) if strategy_name == "FedProx" else 0.0
         epochs = ml_settings.get("epochs", 2)
         batch_size = ml_settings.get("batch_size", 32)
         learning_rate = ml_settings.get("learning_rate", 0.001)
         optimizer_name = ml_settings.get("optimizer", "adam")
-        
+
         dataset = data_settings.get("dataset", "cifar100")
         samples_per_client = data_settings.get("samples_per_client", 500)
         partition_strategy = data_settings.get("partition_strategy", "iid")
@@ -33,173 +35,300 @@ class FlowerAdapter(FLFrameworkAdapter):
         with open(os.path.join(output_dir, "config.json"), "w") as f:
             json.dump(config, f, indent=2)
 
-        server_code = f"""
-import flwr as fl
+        # --- pyproject.toml: the current Flower API packages a run as a small
+        # "Flower App" (ServerApp + ClientApp) rather than two bare scripts.
+        # `dependencies = []` is deliberate: Flower auto-provisions an isolated
+        # per-run environment via `uv sync` for whatever's declared here, which
+        # would otherwise silently try to reinstall torch etc. from scratch even
+        # though benchmark-flower:latest already has everything installed --
+        # confirmed live to look exactly like a hang (many minutes) if these are
+        # declared. `[tool.flwr.app.config]` is how hyperparameters reach both
+        # server_app.py and client_app.py at runtime (via context.run_config),
+        # replacing the old approach of baking every value into f-string source.
+        pyproject_toml = f"""[project]
+name = "benchmark-app"
+version = "0.1.0"
+description = "FL benchmark run"
+license = "MIT"
+dependencies = []
+
+[tool.flwr.app]
+publisher = "benchmark"
+
+[tool.flwr.app.components]
+serverapp = "server_app:app"
+clientapp = "client_app:app"
+
+[tool.flwr.app.config]
+num-server-rounds = {num_rounds}
+fraction-fit = {fraction_fit}
+strategy-name = "{strategy_name}"
+proximal-mu = {proximal_mu}
+local-epochs = {epochs}
+batch-size = {batch_size}
+learning-rate = {learning_rate}
+optimizer-name = "{optimizer_name}"
+dataset = "{dataset}"
+samples-per-client = {samples_per_client}
+partition-strategy = "{partition_strategy}"
+alpha = {alpha}
+shards-per-client = {shards_per_client}
+num-clients = {num_clients}
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = {num_clients}
+"""
+        with open(os.path.join(output_dir, "pyproject.toml"), "w") as f:
+            f.write(pyproject_toml)
+
+        # --- server_app.py ---
+        # FedProx only differs from FedAvg by carrying a proximal_mu value --
+        # the client (below) is what actually applies the proximal term. The
+        # class name still reflects the chosen strategy for readability.
+        strategy_base_class = "FedProx" if strategy_name == "FedProx" else "FedAvg"
+        proximal_mu_kwarg = f",\n        proximal_mu={proximal_mu}" if strategy_name == "FedProx" else ""
+
+        server_app_code = f"""
 import json
 import time
 import psutil
+from flwr.app import ArrayRecord, ConfigRecord, Context
+from flwr.serverapp import ServerApp
+from flwr.serverapp.strategy import FedAvg, FedProx
+from model import get_model
 
-def weighted_average(metrics):
-    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
-    examples = [num_examples for num_examples, _ in metrics]
-    return {{"accuracy": sum(accuracies) / sum(examples)}}
+app = ServerApp()
 
-class CustomFedAvg(fl.server.strategy.FedAvg):
-    def aggregate_fit(self, rnd, results, failures):
+
+class CustomStrategy(FedProx if "{strategy_base_class}" == "FedProx" else FedAvg):
+    def aggregate_train(self, server_round, replies):
         start_time = time.time()
-        aggregated_parameters, aggregated_metrics = super().aggregate_fit(rnd, results, failures)
+        arrays, metrics = super().aggregate_train(server_round, replies)
         agg_time = time.time() - start_time
-        
+
         conns = psutil.net_connections(kind='tcp')
         tcp_est = sum(1 for c in conns if c.status == 'ESTABLISHED')
         tcp_wait = sum(1 for c in conns if c.status == 'TIME_WAIT')
-        
+
         with open("metrics.jsonl", "a") as f:
             f.write(json.dumps({{
                 "type": "server_sys_metric",
-                "round": rnd,
+                "round": server_round,
                 "agg_time": agg_time,
                 "tcp_est": tcp_est,
                 "tcp_wait": tcp_wait
             }}) + "\\n")
-            
-        return aggregated_parameters, aggregated_metrics
 
-    def aggregate_evaluate(self, rnd, results, failures):
-        aggregated_loss, aggregated_metrics = super().aggregate_evaluate(rnd, results, failures)
-        
-        if aggregated_metrics and "accuracy" in aggregated_metrics:
-            acc = aggregated_metrics["accuracy"]
-            with open("metrics.jsonl", "a") as f:
-                f.write(json.dumps({{
-                    "type": "server_metric",
-                    "round": rnd,
-                    "loss": float(aggregated_loss) if aggregated_loss else 0.0,
-                    "accuracy": float(acc)
-                }}) + "\\n")
-                
-        return aggregated_loss, aggregated_metrics
+        return arrays, metrics
 
-if __name__ == "__main__":
-    strategy = CustomFedAvg(
-        fraction_fit={fraction_fit},
-        min_fit_clients={num_clients},
-        min_available_clients={num_clients},
-        evaluate_metrics_aggregation_fn=weighted_average
+    def aggregate_evaluate(self, server_round, replies):
+        # Computed directly from raw replies (rather than via
+        # evaluate_metrics_aggr_fn) so this stays in one place alongside the
+        # telemetry write below.
+        total_examples = 0
+        weighted_loss = 0.0
+        weighted_acc = 0.0
+        for msg in replies:
+            try:
+                m = msg.content["metrics"]
+                n = m["num-examples"]
+                weighted_loss += m["loss"] * n
+                weighted_acc += m["accuracy"] * n
+                total_examples += n
+            except Exception:
+                continue
+
+        if total_examples == 0:
+            return None
+
+        avg_loss = weighted_loss / total_examples
+        avg_acc = weighted_acc / total_examples
+
+        with open("metrics.jsonl", "a") as f:
+            f.write(json.dumps({{
+                "type": "server_metric",
+                "round": server_round,
+                "loss": avg_loss,
+                "accuracy": avg_acc
+            }}) + "\\n")
+
+        from flwr.app import MetricRecord
+        return MetricRecord({{"loss": avg_loss, "accuracy": avg_acc}})
+
+
+@app.main()
+def main(grid, context: Context) -> None:
+    run_config = context.run_config
+    num_rounds = int(run_config["num-server-rounds"])
+    fraction_fit = float(run_config["fraction-fit"])
+    num_clients = int(run_config["num-clients"])
+
+    model = get_model()
+    arrays = ArrayRecord(model.state_dict())
+
+    strategy = CustomStrategy(
+        fraction_train=fraction_fit,
+        fraction_evaluate=1.0,
+        min_train_nodes=num_clients,
+        min_evaluate_nodes=num_clients,
+        min_available_nodes=num_clients{proximal_mu_kwarg}
     )
 
     run_start = time.time()
-
-    fl.server.start_server(
-        server_address="0.0.0.0:8080",
-        config=fl.server.ServerConfig(num_rounds={num_rounds}),
-        strategy=strategy
+    strategy.start(
+        grid=grid,
+        initial_arrays=arrays,
+        num_rounds=num_rounds,
+        train_config=ConfigRecord(dict(run_config)),
     )
-
     total_time = time.time() - run_start
+
     with open("metrics.jsonl", "a") as f:
         f.write(json.dumps({{
             "type": "wall_clock_time",
             "time_seconds": round(total_time, 2)
         }}) + "\\n")
 """
-        with open(os.path.join(output_dir, "server.py"), "w") as f:
-            f.write(server_code)
+        with open(os.path.join(output_dir, "server_app.py"), "w") as f:
+            f.write(server_app_code)
 
-        client_code = f"""
-import os
+        # --- client_app.py ---
+        # context.node_config["partition-id"]/["num-partitions"] are populated
+        # automatically by the Simulation Engine per simulated client based on
+        # `options.num-supernodes` above -- no manual per-client wiring needed
+        # (unlike the Deployment Engine's --node-config, which this adapter
+        # does not use).
+        client_app_code = """
 import time
-import flwr as fl
 import torch
+from flwr.app import ArrayRecord, MetricRecord, RecordDict, Message, Context
+from flwr.clientapp import ClientApp
 from model import get_model, train, test
 from dataset import load_data
 from telemetry import log_client_metrics, log_distribution
 
-CLIENT_ID = int(os.environ.get("CLIENT_INDEX", 0))
-RUN_ID = os.environ.get("RUN_ID", "default")
-SERVER_HOSTNAME = f"run_{{RUN_ID}}_server:8080"
+app = ClientApp()
 
-class FLClient(fl.client.NumPyClient):
-    def __init__(self):
-        self.model = get_model()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
-        
-        self.trainloader, self.testloader = load_data(
-            partition_strategy="{partition_strategy}",
-            samples_per_client={samples_per_client},
-            num_clients={num_clients},
-            client_id=CLIENT_ID,
-            batch_size={batch_size},
-            alpha={alpha},
-            shards_per_client={shards_per_client}
-        )
-        
-        # --- NEW: Calculate and log label distribution once on boot ---
-        counts = {{}}
-        for _, labels in self.trainloader:
+_distribution_logged = set()
+
+
+def _load_partition(context: Context):
+    run_config = context.run_config
+    partition_id = int(context.node_config["partition-id"])
+    num_partitions = int(context.node_config["num-partitions"])
+    trainloader, testloader = load_data(
+        partition_strategy=run_config["partition-strategy"],
+        samples_per_client=int(run_config["samples-per-client"]),
+        num_clients=num_partitions,
+        client_id=partition_id,
+        batch_size=int(run_config["batch-size"]),
+        alpha=float(run_config["alpha"]),
+        shards_per_client=int(run_config["shards-per-client"]),
+    )
+    return partition_id, trainloader, testloader
+
+
+@app.train()
+def train_fn(msg: Message, context: Context):
+    run_config = context.run_config
+    partition_id, trainloader, _ = _load_partition(context)
+
+    if partition_id not in _distribution_logged:
+        counts = {}
+        for _, labels in trainloader:
             for label in labels.numpy():
                 lbl_str = str(label)
                 counts[lbl_str] = counts.get(lbl_str, 0) + 1
-        log_distribution(f"client_{{CLIENT_ID}}", counts)
+        log_distribution(f"client_{partition_id}", counts)
+        _distribution_logged.add(partition_id)
 
-    def get_parameters(self, config):
-        return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
+    model = get_model()
+    model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
 
-    def set_parameters(self, parameters):
-        params_dict = zip(self.model.state_dict().keys(), parameters)
-        state_dict = dict({{k: torch.tensor(v) for k, v in params_dict}})
-        self.model.load_state_dict(state_dict, strict=True)
+    mu = float(run_config["proximal-mu"])
+    global_params = [p.detach().clone() for p in model.parameters()] if mu > 0 else None
 
-    def fit(self, parameters, config):
-        self.set_parameters(parameters)
-        start_time = time.time()
-        
-        train(self.model, self.trainloader, {epochs}, {learning_rate}, "{optimizer_name}")
-        
-        compute_time = time.time() - start_time
-        rnd = config.get("server_round", getattr(self, "_round_counter", 0) + 1)
-        self._round_counter = rnd 
-        
-        log_client_metrics(f"client_{{CLIENT_ID}}", rnd, compute_time)
-        return self.get_parameters(config), len(self.trainloader.dataset), {{}}
+    start_time = time.time()
+    train(
+        model,
+        trainloader,
+        int(run_config["local-epochs"]),
+        float(run_config["learning-rate"]),
+        run_config["optimizer-name"],
+        mu=mu,
+        global_params=global_params,
+    )
+    compute_time = time.time() - start_time
 
-    def evaluate(self, parameters, config):
-        self.set_parameters(parameters)
-        loss, accuracy = test(self.model, self.testloader)
-        return float(loss), len(self.testloader.dataset), {{"accuracy": float(accuracy)}}
+    # FedAvg.configure_train() (base class) always injects "server-round" into
+    # the outgoing config -- reliable regardless of which Ray actor handled
+    # this call (a local counter would silently reset to 1 whenever Ray
+    # schedules a round on a fresh actor process).
+    rnd = int(msg.content["config"]["server-round"])
 
-if __name__ == "__main__":
-    fl.client.start_client(server_address=SERVER_HOSTNAME, client=FLClient().to_client())
+    state_dict = model.state_dict()
+    comm_mb = sum(v.element_size() * v.nelement() for v in state_dict.values()) / (1024 * 1024)
+    log_client_metrics(f"client_{partition_id}", rnd, compute_time, comm_mb)
+
+    model_record = ArrayRecord(state_dict)
+    metrics = MetricRecord({"num-examples": len(trainloader.dataset)})
+    content = RecordDict({"arrays": model_record, "metrics": metrics})
+    return Message(content=content, reply_to=msg)
+
+
+@app.evaluate()
+def evaluate_fn(msg: Message, context: Context):
+    _, _, testloader = _load_partition(context)
+
+    model = get_model()
+    model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
+
+    loss, accuracy = test(model, testloader)
+    metrics = MetricRecord({
+        "loss": float(loss),
+        "accuracy": float(accuracy),
+        "num-examples": len(testloader.dataset),
+    })
+    content = RecordDict({"metrics": metrics})
+    return Message(content=content, reply_to=msg)
 """
-        with open(os.path.join(output_dir, "client.py"), "w") as f:
-            f.write(client_code)
+        with open(os.path.join(output_dir, "client_app.py"), "w") as f:
+            f.write(client_app_code)
+
+        # --- run_flwr.py: thin wrapper the container actually executes ---
+        run_flwr_code = """
+import subprocess
+import sys
+
+result = subprocess.run(["flwr", "run", ".", "local-simulation", "--stream"])
+sys.exit(result.returncode)
+"""
+        with open(os.path.join(output_dir, "run_flwr.py"), "w") as f:
+            f.write(run_flwr_code)
 
     def get_docker_commands(self, output_dir: str, num_clients: int) -> List[Dict[str, str]]:
-        base_image = "benchmark-flower:latest" 
-        specs = [{
+        # Simulation Engine: all `num_clients` participants are simulated
+        # in-process (via Ray) within this single container, driven by
+        # `options.num-supernodes` in pyproject.toml -- matching how the FLARE
+        # adapter's `nvflare simulator` already works in this platform.
+        return [{
             "name": "server",
-            "image": base_image,
-            "command": "python server.py"
+            "image": "benchmark-flower:latest",
+            "command": "python run_flwr.py"
         }]
-        for i in range(num_clients):
-            specs.append({
-                "name": f"client_{i}",
-                "image": base_image,
-                "command": "python client.py",
-                "env": {"CLIENT_INDEX": str(i)}
-            })
-        return specs
 
     def inject_telemetry(self, output_dir: str, run_id: str) -> None:
         telemetry_code = """
 import json
 import psutil
 
-def log_client_metrics(client_id, round_num, compute_time):
+def log_client_metrics(client_id, round_num, compute_time, comm_mb):
     cpu_usage = psutil.cpu_percent(interval=None)
     ram_usage = psutil.Process().memory_info().rss / (1024 * 1024)
-    
+
     metric = {
         "type": "client_metric",
         "client_id": client_id,
@@ -207,7 +336,7 @@ def log_client_metrics(client_id, round_num, compute_time):
         "cpu": cpu_usage,
         "ram": ram_usage,
         "time": compute_time,
-        "comm_mb": 1.2,
+        "comm_mb": comm_mb,
         "iowait": 0.0
     }
     with open("metrics.jsonl", "a") as f:

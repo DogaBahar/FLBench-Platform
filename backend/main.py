@@ -1,20 +1,20 @@
 from flask import Flask
 from flask_cors import CORS
 from api.routes import bp as api_bp
-from core.database import init_db, db_session
+from core.database import db_session
 
 def create_app():
     app = Flask(__name__)
-    
+
     # Enable CORS for all routes so the Vite React frontend can communicate with Flask
     CORS(app)
-    
+
     # Register blueprints (mapped to /api to match Dashboard.jsx and Results.jsx)
     app.register_blueprint(api_bp, url_prefix='/api')
 
-    # Initialize the database on startup
-    with app.app_context():
-        init_db()
+    # Schema creation/updates are now handled by Alembic migrations
+    # (see scripts/migrate.py, run from docker-entrypoint.sh before this
+    # process starts) rather than by Base.metadata.create_all() here.
 
     # Ensure database sessions are cleanly removed after each request
     @app.teardown_appcontext

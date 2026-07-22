@@ -24,7 +24,13 @@ def get_model():
     """Factory function expected by the Adaptive Layer."""
     return FlexibleCNN(in_channels=3, num_classes=100)
 
-def train(net, trainloader, epochs, lr, optimizer_name):
+def train(net, trainloader, epochs, lr, optimizer_name, mu=0.0, global_params=None):
+    """
+    mu/global_params implement FedProx (Li et al., 2018): a (mu/2)*||w - w_global||^2
+    penalty pulling local weights back toward the global model as received at
+    the start of this round. mu=0 (the default) is plain local training, i.e.
+    what every adapter already did before FedProx support was added.
+    """
     criterion = torch.nn.CrossEntropyLoss()
     if optimizer_name.lower() == "sgd":
         optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
@@ -42,6 +48,9 @@ def train(net, trainloader, epochs, lr, optimizer_name):
             optimizer.zero_grad()
             outputs = net(images)
             loss = criterion(outputs, labels)
+            if mu > 0 and global_params is not None:
+                prox_term = sum((p - g.to(p.device)).pow(2).sum() for p, g in zip(net.parameters(), global_params))
+                loss = loss + (mu / 2) * prox_term
             loss.backward()
             optimizer.step()
             total_loss += loss.item()

@@ -24,7 +24,7 @@ def get_model():
     """Factory function for FEMNIST (1 grayscale channel, 62 classes)."""
     return FlexibleCNN(in_channels=1, num_classes=62)
 
-def train(net, trainloader, epochs, lr, optimizer_name):
+def train(net, trainloader, epochs, lr, optimizer_name, mu=0.0, global_params=None):
     criterion = torch.nn.CrossEntropyLoss()
     if optimizer_name.lower() == "sgd":
         optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
@@ -42,6 +42,9 @@ def train(net, trainloader, epochs, lr, optimizer_name):
             optimizer.zero_grad()
             outputs = net(images)
             loss = criterion(outputs, labels)
+            if mu > 0 and global_params is not None:
+                prox_term = sum((p - g.to(p.device)).pow(2).sum() for p, g in zip(net.parameters(), global_params))
+                loss = loss + (mu / 2) * prox_term
             loss.backward()
             optimizer.step()
             total_loss += loss.item()

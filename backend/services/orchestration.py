@@ -32,10 +32,20 @@ class DockerOrchestrator:
                 if "env" in spec:
                     env_vars.update(spec["env"])
 
+                container_name = f"run_{run_id}_{spec['name']}"
+                # Make launches idempotent: a retried/redelivered task (see
+                # task_acks_late in services/tasks.py) could be re-running a
+                # run_id whose containers from a prior, uncleanly-killed
+                # attempt are still sitting around under this same name.
+                try:
+                    self.client.containers.get(container_name).remove(force=True)
+                except docker.errors.NotFound:
+                    pass
+
                 container = self.client.containers.run(
                     image=spec["image"],
                     command=spec["command"],
-                    name=f"run_{run_id}_{spec['name']}",
+                    name=container_name,
                     network=self.network_name,
                     volumes={
                         volume_dir: {'bind': '/app/workspace', 'mode': 'rw'},

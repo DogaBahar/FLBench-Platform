@@ -193,14 +193,23 @@ export default function Results() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
                 <h3 style={{ margin: 0 }}>Run Details: {selectedRun}</h3>
-                <a 
-                  href={`http://localhost:5001/api/runs/${selectedRun}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ color: '#0070f3', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 'bold' }}
-                >
-                  <span>View Raw JSON Payload ↗</span>
-                </a>
+                <div style={{ display: 'flex', gap: '1.25rem' }}>
+                  <a
+                    href={`http://localhost:5001/api/runs/${selectedRun}/export`}
+                    style={{ color: '#10b981', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 'bold' }}
+                    title="Download this run as a results/ submission file to contribute via PR"
+                  >
+                    <span>Export for results/ ↓</span>
+                  </a>
+                  <a
+                    href={`http://localhost:5001/api/runs/${selectedRun}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#0070f3', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 'bold' }}
+                  >
+                    <span>View Raw JSON Payload ↗</span>
+                  </a>
+                </div>
               </div>
               
               {/* Top Level Summary Cards */}
