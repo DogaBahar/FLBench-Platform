@@ -317,10 +317,3 @@ Then:
   even in the simplest possible 2-node setup, past node registration and run
   submission, with `flower-superexec`'s `--plugin-type clientapp` subprocess
   confirmed running and listening but never invoking `client_app.py`.
-- Also learned the hard way debugging the above: Flower now auto-migrates
-  legacy `[tool.flwr.federations]` `pyproject.toml` entries into a separate
-  `~/.flwr/config.toml` on first `flwr run` in a given container, *mutating
-  the source file in place* to comment that section out. Harmless here since
-  every run gets a freshly generated `pyproject.toml`, but confusing if you're
-  ever inspecting `$SHARED_RUN_DIR/<run_id>/pyproject.toml` after the fact and
-  wondering why the federation section is commented out.

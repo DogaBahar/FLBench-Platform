@@ -1,7 +1,6 @@
 # Community benchmark results
 
-This folder is the shared results pool for the FL Benchmark Platform. There's
-no hosted service behind it — a submission is a JSON file added to this
+This folder is the shared results pool for the FL Benchmark Platform. A submission is a JSON file added to this
 folder through a normal pull request. Every file here is validated by CI on
 the PR that adds it (see `.github/workflows/validate-results.yml`), and the
 combined set is rendered into a static leaderboard published via GitHub
