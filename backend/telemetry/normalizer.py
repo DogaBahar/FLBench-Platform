@@ -1,7 +1,10 @@
 import os
 import json
-from typing import Dict, Any
+from datetime import datetime, timezone
+from typing import Dict, Any, Optional
 from core.config import config
+
+EXPORT_SCHEMA_VERSION = 1
 
 def get_run_telemetry(run_id: str) -> Dict[str, Any]:
     run_dir = os.path.join(config.SHARED_RUN_DIR, run_id)
@@ -85,3 +88,37 @@ def get_run_telemetry(run_id: str) -> Dict[str, Any]:
         })
 
     return telemetry
+
+
+def build_run_export(run, submitted_by: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Packages a BenchmarkRun into the envelope shape documented by
+    results/schema.json at the repo root -- shared by scripts/export_run.py
+    (CLI) and GET /api/runs/<id>/export (frontend "Export for results/" button).
+    """
+    telemetry = get_run_telemetry(run.id)
+
+    return {
+        "schema_version": EXPORT_SCHEMA_VERSION,
+        "run_id": run.id,
+        "framework": run.framework,
+        "dataset": run.dataset,
+        "strategy": run.strategy,
+        "status": run.status,
+        "config": {
+            "rounds": run.rounds,
+            "epochs": run.epochs,
+            "batch_size": run.batch_size,
+            "full_config": telemetry.get("full_config", {}),
+        },
+        "started_at": run.started_at.isoformat() if run.started_at else None,
+        "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "submitted_by": submitted_by,
+        "results": {
+            "global_metrics": telemetry["global_metrics"],
+            "client_logs": telemetry["client_logs"],
+            "server_logs": telemetry["server_logs"],
+            "distributions": telemetry["distributions"],
+        },
+    }

@@ -7,7 +7,7 @@ from core.database import db_session
 from domain.models import BenchmarkRun
 from domain.schemas import BenchmarkRequestSchema
 from services.tasks import run_benchmark_task
-from telemetry.normalizer import get_run_telemetry
+from telemetry.normalizer import get_run_telemetry, build_run_export
 from datetime import datetime
 import os
 import shutil
@@ -137,3 +137,18 @@ def handle_specific_run(run_id):
         response_data.update(telemetry_data)
 
         return jsonify(response_data), 200
+
+
+@bp.route('/runs/<run_id>/export', methods=['GET'])
+def export_run(run_id):
+    run = db_session.query(BenchmarkRun).filter(BenchmarkRun.id == run_id).first()
+    if not run:
+        return error_response("Run not found", 404)
+
+    submitted_by = request.args.get('submitted_by')
+    envelope = build_run_export(run, submitted_by)
+    filename = f"{run.framework}-{run.dataset}-{run.id}.json"
+
+    response = jsonify(envelope)
+    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response, 200

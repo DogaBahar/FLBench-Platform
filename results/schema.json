@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FL Benchmark Platform submitted run",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "framework",
+    "dataset",
+    "strategy",
+    "status",
+    "config",
+    "results"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "framework": { "type": "string", "enum": ["flower", "nvflare", "fedml"] },
+    "dataset": { "type": "string", "enum": ["cifar100", "femnist"] },
+    "strategy": { "type": "string", "enum": ["FedAvg", "FedProx"] },
+    "status": { "type": "string", "enum": ["COMPLETED", "FAILED"] },
+    "started_at": { "type": ["string", "null"] },
+    "completed_at": { "type": ["string", "null"] },
+    "exported_at": { "type": "string" },
+    "submitted_by": { "type": ["string", "null"] },
+    "config": {
+      "type": "object",
+      "required": ["rounds", "epochs", "batch_size"],
+      "properties": {
+        "rounds": { "type": "integer", "exclusiveMinimum": 0 },
+        "epochs": { "type": "integer", "exclusiveMinimum": 0 },
+        "batch_size": { "type": "integer", "exclusiveMinimum": 0 },
+        "full_config": { "type": "object" }
+      }
+    },
+    "results": {
+      "type": "object",
+      "required": ["global_metrics"],
+      "properties": {
+        "global_metrics": {
+          "type": "object",
+          "required": ["metrics_distributed", "losses_distributed", "wall_clock_time_seconds"],
+          "properties": {
+            "metrics_distributed": {
+              "type": "object",
+              "required": ["accuracy"],
+              "properties": {
+                "accuracy": { "type": "array" }
+              }
+            },
+            "losses_distributed": { "type": "array" },
+            "wall_clock_time_seconds": { "type": "number" }
+          }
+        },
+        "client_logs": { "type": "array" },
+        "server_logs": { "type": "array" },
+        "distributions": { "type": "object" }
+      }
+    }
+  }
+}
