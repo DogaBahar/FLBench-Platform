@@ -96,6 +96,22 @@ class DashboardClientTrainer(ClientTrainer):
             shards_per_client={shards_per_client}
         )
 
+        # __init__ runs exactly once per client process (unlike train(),
+        # which fires every round), so this is the one natural place to
+        # log the data distribution -- matching what the Flower/FLARE
+        # adapters already do client-side.
+        counts = {{}}
+        for _, labels in self.trainloader:
+            for label in labels.numpy():
+                lbl_str = str(label)
+                counts[lbl_str] = counts.get(lbl_str, 0) + 1
+        with open("/app/workspace/metrics.jsonl", "a") as f:
+            f.write(json.dumps({{
+                "type": "distribution",
+                "client_id": f"client_{{self.client_id}}",
+                "counts": counts
+            }}) + "\\n")
+
     def get_model_params(self):
         return self.model.cpu().state_dict()
 

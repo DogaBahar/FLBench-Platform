@@ -1,0 +1,38 @@
+[
+  {
+    "framework": "flower",
+    "clients": 2,
+    "config": {
+      "federated_settings": {"rounds": 1, "strategy": "FedAvg", "fraction_fit": 1},
+      "ml_hyperparameters": {"epochs": 1, "batch_size": 32, "learning_rate": 0.001, "optimizer": "adam"},
+      "data_simulation": {"dataset": "cifar100", "samples_per_client": 50, "partition_strategy": "iid"}
+    }
+  },
+  {
+    "framework": "flower",
+    "clients": 2,
+    "config": {
+      "federated_settings": {"rounds": 1, "strategy": "FedProx", "fraction_fit": 1, "proximal_mu": 0.01},
+      "ml_hyperparameters": {"epochs": 1, "batch_size": 32, "learning_rate": 0.001, "optimizer": "adam"},
+      "data_simulation": {"dataset": "cifar100", "samples_per_client": 50, "partition_strategy": "dirichlet", "alpha": 0.5}
+    }
+  },
+  {
+    "framework": "nvflare",
+    "clients": 2,
+    "config": {
+      "federated_settings": {"rounds": 1, "strategy": "FedAvg", "fraction_fit": 1},
+      "ml_hyperparameters": {"epochs": 1, "batch_size": 32, "learning_rate": 0.001, "optimizer": "adam"},
+      "data_simulation": {"dataset": "femnist", "samples_per_client": 50, "partition_strategy": "iid"}
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {"rounds": 1, "strategy": "FedAvg", "fraction_fit": 1},
+      "ml_hyperparameters": {"epochs": 1, "batch_size": 32, "learning_rate": 0.001, "optimizer": "adam"},
+      "data_simulation": {"dataset": "cifar100", "samples_per_client": 50, "partition_strategy": "shard", "shards_per_client": 2}
+    }
+  }
+]

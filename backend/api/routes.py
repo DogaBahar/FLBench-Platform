@@ -7,7 +7,7 @@ from core.database import db_session
 from domain.models import BenchmarkRun
 from domain.schemas import BenchmarkRequestSchema
 from services.tasks import run_benchmark_task
-from telemetry.normalizer import get_run_telemetry, build_run_export
+from telemetry.normalizer import get_run_telemetry, get_archived_telemetry, build_run_export
 from datetime import datetime
 import os
 import shutil
@@ -134,6 +134,10 @@ def handle_specific_run(run_id):
 
         # --- Always fetch telemetry regardless of run status ---
         telemetry_data = get_run_telemetry(run_id)
+        
+        if run.status == "COMPLETED" and not telemetry_data["global_metrics"]["metrics_distributed"]["accuracy"]:
+            telemetry_data = get_archived_telemetry(run)
+
         response_data.update(telemetry_data)
 
         return jsonify(response_data), 200

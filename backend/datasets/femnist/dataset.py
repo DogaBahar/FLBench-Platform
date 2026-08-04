@@ -1,17 +1,43 @@
+import os
 import torch
 from datasets import load_dataset
+from filelock import SoftFileLock
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import numpy as np
 
+HF_PATH = "flwrlabs/femnist"
+
+
+def _dataset_lock() -> SoftFileLock:
+    # FLARE (subprocess-per-site) and FedML (container-per-client) both
+    # spawn every client independently with no coordination between them,
+    # so on a cold cache they all call load_dataset() for the same dataset
+    # at once and race on the HF datasets library's own .incomplete staging
+    # dir (one process's cleanup rmtree's it out from under another still
+    # mid-build). This lock file lives in the same bind-mounted cache dir
+    # every client/container shares, serializing the first (slow) build
+    # across processes *and* containers; every later load_dataset() call
+    # is a fast local cache read that never contends for the lock.
+    lock_dir = os.environ.get("HF_DATASETS_CACHE", "/tmp")
+    os.makedirs(lock_dir, exist_ok=True)
+    return SoftFileLock(os.path.join(lock_dir, HF_PATH.replace("/", "_") + ".lock"), timeout=600)
+
+
+def warm_cache():
+    with _dataset_lock():
+        load_dataset(HF_PATH, split="train")
+
+
 def load_data(partition_strategy: str, samples_per_client: int, num_clients: int, client_id: int, batch_size: int = 32, alpha: float = 0.5, shards_per_client: int = 2):
-    hf_path, image_key, label_key = "flwrlabs/femnist", "image", "character"
+    hf_path, image_key, label_key = HF_PATH, "image", "character"
     transform = transforms.Compose([
-        transforms.ToTensor(), 
+        transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
     ])
 
-    dataset = load_dataset(hf_path, split="train")
+    with _dataset_lock():
+        dataset = load_dataset(hf_path, split="train")
     if label_key not in dataset.features:
         label_key = "label"
 

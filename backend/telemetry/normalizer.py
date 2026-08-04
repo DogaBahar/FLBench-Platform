@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from core.config import config
+from core.database import db_session
 
 EXPORT_SCHEMA_VERSION = 1
 
@@ -86,6 +87,56 @@ def get_run_telemetry(run_id: str) -> Dict[str, Any]:
             "client_id": c_id,
             "logs": logs
         })
+
+    return telemetry
+
+
+def get_archived_telemetry(run) -> Dict[str, Any]:
+    
+    from domain.models import BenchmarkMetric  # local: keeps this module DB-free on the (usual) live-file path
+
+    rows = (
+        db_session.query(BenchmarkMetric)
+        .filter(BenchmarkMetric.run_id == run.id)
+        .order_by(BenchmarkMetric.round_number)
+        .all()
+    )
+
+    wall_clock = 0.0
+    if run.started_at and run.completed_at:
+        wall_clock = (run.completed_at - run.started_at).total_seconds()
+
+    telemetry = {
+        "global_metrics": {
+            "metrics_distributed": {"accuracy": []},
+            "losses_distributed": [],
+            "wall_clock_time_seconds": round(wall_clock, 2)
+        },
+        "client_logs": [],
+        "server_logs": [],
+        "distributions": {},
+        "full_config": {},
+        "telemetry_source": "archived"
+    }
+
+    archived_logs = []
+    for row in rows:
+        if row.accuracy is not None:
+            telemetry["global_metrics"]["metrics_distributed"]["accuracy"].append([row.round_number, row.accuracy])
+        if row.loss is not None:
+            telemetry["global_metrics"]["losses_distributed"].append([row.round_number, row.loss])
+        archived_logs.append({
+            "action": "fit",
+            "round": row.round_number,
+            "cpu_usage_percent": row.cpu_usage_pct or 0.0,
+            "peak_memory_mb": row.memory_usage_mb or 0.0,
+            "compute_time_seconds": (row.training_time_ms or 0) / 1000,
+            "comm_size_mb": (row.network_bytes_sent or 0) / (1024 * 1024),
+            "iowait": 0.0
+        })
+
+    if archived_logs:
+        telemetry["client_logs"] = [{"client_id": "archived_avg", "logs": archived_logs}]
 
     return telemetry
 

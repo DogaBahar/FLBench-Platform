@@ -35,16 +35,6 @@ class FlowerAdapter(FLFrameworkAdapter):
         with open(os.path.join(output_dir, "config.json"), "w") as f:
             json.dump(config, f, indent=2)
 
-        # --- pyproject.toml: the current Flower API packages a run as a small
-        # "Flower App" (ServerApp + ClientApp) rather than two bare scripts.
-        # `dependencies = []` is deliberate: Flower auto-provisions an isolated
-        # per-run environment via `uv sync` for whatever's declared here, which
-        # would otherwise silently try to reinstall torch etc. from scratch even
-        # though benchmark-flower:latest already has everything installed --
-        # confirmed live to look exactly like a hang (many minutes) if these are
-        # declared. `[tool.flwr.app.config]` is how hyperparameters reach both
-        # server_app.py and client_app.py at runtime (via context.run_config),
-        # replacing the old approach of baking every value into f-string source.
         pyproject_toml = f"""[project]
 name = "benchmark-app"
 version = "0.1.0"
@@ -99,6 +89,7 @@ from flwr.app import ArrayRecord, ConfigRecord, Context
 from flwr.serverapp import ServerApp
 from flwr.serverapp.strategy import FedAvg, FedProx
 from model import get_model
+from dataset import warm_cache
 
 app = ServerApp()
 
@@ -113,7 +104,7 @@ class CustomStrategy(FedProx if "{strategy_base_class}" == "FedProx" else FedAvg
         tcp_est = sum(1 for c in conns if c.status == 'ESTABLISHED')
         tcp_wait = sum(1 for c in conns if c.status == 'TIME_WAIT')
 
-        with open("metrics.jsonl", "a") as f:
+        with open("/app/workspace/metrics.jsonl", "a") as f:
             f.write(json.dumps({{
                 "type": "server_sys_metric",
                 "round": server_round,
@@ -147,7 +138,7 @@ class CustomStrategy(FedProx if "{strategy_base_class}" == "FedProx" else FedAvg
         avg_loss = weighted_loss / total_examples
         avg_acc = weighted_acc / total_examples
 
-        with open("metrics.jsonl", "a") as f:
+        with open("/app/workspace/metrics.jsonl", "a") as f:
             f.write(json.dumps({{
                 "type": "server_metric",
                 "round": server_round,
@@ -165,6 +156,11 @@ def main(grid, context: Context) -> None:
     num_rounds = int(run_config["num-server-rounds"])
     fraction_fit = float(run_config["fraction-fit"])
     num_clients = int(run_config["num-clients"])
+
+    # Downloads/builds the HF dataset cache once, serially, here in the
+    # driver process -- before strategy.start() spawns concurrent client
+    # actors that would otherwise race to build the same cold cache.
+    warm_cache()
 
     model = get_model()
     arrays = ArrayRecord(model.state_dict())
@@ -186,7 +182,7 @@ def main(grid, context: Context) -> None:
     )
     total_time = time.time() - run_start
 
-    with open("metrics.jsonl", "a") as f:
+    with open("/app/workspace/metrics.jsonl", "a") as f:
         f.write(json.dumps({{
             "type": "wall_clock_time",
             "time_seconds": round(total_time, 2)
@@ -339,7 +335,12 @@ def log_client_metrics(client_id, round_num, compute_time, comm_mb):
         "comm_mb": comm_mb,
         "iowait": 0.0
     }
-    with open("metrics.jsonl", "a") as f:
+    # Absolute path: ClientApp train/evaluate calls run inside the
+    # Simulation Engine's Ray actor processes, which do not inherit the
+    # driver's /app/workspace working directory, so a relative path here
+    # silently writes into whatever directory Ray happened to give the
+    # actor instead of the run's real metrics.jsonl.
+    with open("/app/workspace/metrics.jsonl", "a") as f:
         f.write(json.dumps(metric) + "\\n")
 
 def log_distribution(client_id, counts):
@@ -348,7 +349,7 @@ def log_distribution(client_id, counts):
         "client_id": client_id,
         "counts": counts
     }
-    with open("metrics.jsonl", "a") as f:
+    with open("/app/workspace/metrics.jsonl", "a") as f:
         f.write(json.dumps(metric) + "\\n")
 """
         with open(os.path.join(output_dir, "telemetry.py"), "w") as f:
