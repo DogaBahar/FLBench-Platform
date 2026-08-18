@@ -50,7 +50,15 @@
               }
             },
             "losses_distributed": { "type": "array" },
-            "wall_clock_time_seconds": { "type": "number" }
+            "wall_clock_time_seconds": { "type": "number" },
+            "fairness_metrics": {
+              "type": "object",
+              "description": "Per-round spread of per-client accuracy (each client evaluating that round's global model on its own held-out split).",
+              "properties": {
+                "accuracy_std": { "type": "array" },
+                "worst_client_accuracy": { "type": "array" }
+              }
+            }
           }
         },
         "client_logs": { "type": "array" },

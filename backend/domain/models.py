@@ -36,7 +36,12 @@ class BenchmarkMetric(Base):
     round_number = Column(Integer, nullable=False)
     accuracy = Column(Float, nullable=True)
     loss = Column(Float, nullable=True)
-    
+
+    # Fairness under non-IID splits: spread of per-client accuracy evaluating
+    # the same round's global model on each client's own held-out data.
+    accuracy_std = Column(Float, nullable=True)
+    worst_client_accuracy = Column(Float, nullable=True)
+
     # Telemetry
     training_time_ms = Column(Integer, nullable=True)
     communication_time_ms = Column(Integer, nullable=True)

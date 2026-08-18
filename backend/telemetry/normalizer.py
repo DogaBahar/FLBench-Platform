@@ -1,5 +1,6 @@
 import os
 import json
+import statistics
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from core.config import config
@@ -10,17 +11,22 @@ EXPORT_SCHEMA_VERSION = 1
 def get_run_telemetry(run_id: str) -> Dict[str, Any]:
     run_dir = os.path.join(config.SHARED_RUN_DIR, run_id)
     metrics_file = os.path.join(run_dir, "metrics.jsonl")
-    
+
     telemetry = {
         "global_metrics": {
             "metrics_distributed": {"accuracy": []},
             "losses_distributed": [],
-            "wall_clock_time_seconds": 0
+            "wall_clock_time_seconds": 0,
+            # Fairness under non-IID splits: every client evaluates the same
+            # round's global model on its own held-out data (see
+            # "client_eval_metric" below), so the spread across clients is a
+            # signal that a single averaged accuracy number can't show.
+            "fairness_metrics": {"accuracy_std": [], "worst_client_accuracy": []}
         },
         "client_logs": [],
         "server_logs": [],
         "distributions": {},
-        "full_config": {} 
+        "full_config": {}
     }
 
     config_file = os.path.join(run_dir, "config.json")
@@ -36,6 +42,7 @@ def get_run_telemetry(run_id: str) -> Dict[str, Any]:
         return telemetry
 
     clients_data = {}
+    eval_by_round = {}
 
     with open(metrics_file, "r") as f:
         for line in f:
@@ -47,7 +54,11 @@ def get_run_telemetry(run_id: str) -> Dict[str, Any]:
                     rnd = log.get("round", 1)
                     telemetry["global_metrics"]["metrics_distributed"]["accuracy"].append([rnd, log.get("accuracy", 0.0)])
                     telemetry["global_metrics"]["losses_distributed"].append([rnd, log.get("loss", 0.0)])
-                
+
+                elif log_type == "client_eval_metric":
+                    rnd = log.get("round", 1)
+                    eval_by_round.setdefault(rnd, []).append(log.get("accuracy", 0.0))
+
                 # --- NEW: Parse Server TCP and Aggregation Time ---
                 elif log_type == "server_sys_metric":
                     telemetry["server_logs"].append({
@@ -88,6 +99,14 @@ def get_run_telemetry(run_id: str) -> Dict[str, Any]:
             "logs": logs
         })
 
+    for rnd in sorted(eval_by_round):
+        accs = eval_by_round[rnd]
+        # Population stdev (not sample): accs is every client that reported
+        # this round, not a sample of a larger population.
+        std = statistics.pstdev(accs) if len(accs) > 1 else 0.0
+        telemetry["global_metrics"]["fairness_metrics"]["accuracy_std"].append([rnd, round(std, 4)])
+        telemetry["global_metrics"]["fairness_metrics"]["worst_client_accuracy"].append([rnd, round(min(accs), 4)])
+
     return telemetry
 
 
@@ -110,7 +129,8 @@ def get_archived_telemetry(run) -> Dict[str, Any]:
         "global_metrics": {
             "metrics_distributed": {"accuracy": []},
             "losses_distributed": [],
-            "wall_clock_time_seconds": round(wall_clock, 2)
+            "wall_clock_time_seconds": round(wall_clock, 2),
+            "fairness_metrics": {"accuracy_std": [], "worst_client_accuracy": []}
         },
         "client_logs": [],
         "server_logs": [],
@@ -125,6 +145,10 @@ def get_archived_telemetry(run) -> Dict[str, Any]:
             telemetry["global_metrics"]["metrics_distributed"]["accuracy"].append([row.round_number, row.accuracy])
         if row.loss is not None:
             telemetry["global_metrics"]["losses_distributed"].append([row.round_number, row.loss])
+        if row.accuracy_std is not None:
+            telemetry["global_metrics"]["fairness_metrics"]["accuracy_std"].append([row.round_number, row.accuracy_std])
+        if row.worst_client_accuracy is not None:
+            telemetry["global_metrics"]["fairness_metrics"]["worst_client_accuracy"].append([row.round_number, row.worst_client_accuracy])
         archived_logs.append({
             "action": "fit",
             "round": row.round_number,

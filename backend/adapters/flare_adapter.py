@@ -145,6 +145,7 @@ class FlareAdapter(FLFrameworkAdapter):
         train_script = f"""
 import os
 import time
+import json
 import torch
 import nvflare.client as flare
 from model import get_model, train, test
@@ -200,12 +201,24 @@ def main():
         mu = {proximal_mu}
         global_params = [p.detach().clone() for p in model.parameters()] if mu > 0 else None
 
+        # Every client evaluates this round's just-received global model on its
+        # own held-out split (not just site-1) so per-round fairness across
+        # clients (accuracy std, worst-client accuracy) can be measured, not
+        # just one client's local test accuracy.
+        loss, accuracy = test(model, testloader)
+        with open("/app/workspace/metrics.jsonl", "a") as f:
+            f.write(json.dumps({{
+                "type": "client_eval_metric",
+                "client_id": f"client_{{client_id}}",
+                "round": rnd,
+                "loss": float(loss),
+                "accuracy": float(accuracy),
+                "num_samples": len(testloader.dataset)
+            }}) + "\\n")
+
         if client_id == 0:
-            loss, accuracy = test(model, testloader)
-            
             # Extract System Server Telemetry right here from the training side safely
             import psutil
-            import json
             try:
                 conns = psutil.net_connections(kind='tcp')
                 tcp_est = sum(1 for c in conns if c.status == 'ESTABLISHED')
@@ -214,7 +227,7 @@ def main():
                 tcp_est, tcp_wait = 0, 0
 
             agg_time = time.time() - round_start_time
-            
+
             with open("/app/workspace/metrics.jsonl", "a") as f:
                 f.write(json.dumps({{
                     "type": "server_metric",
@@ -222,7 +235,7 @@ def main():
                     "loss": float(loss),
                     "accuracy": float(accuracy)
                 }}) + "\\n")
-                
+
                 f.write(json.dumps({{
                     "type": "server_sys_metric",
                     "round": rnd,
@@ -230,7 +243,7 @@ def main():
                     "tcp_est": tcp_est,
                     "tcp_wait": tcp_wait
                 }}) + "\\n")
-            
+
         start_time = time.time()
         train(model, trainloader, {epochs}, {learning_rate}, "{optimizer_name}", mu=mu, global_params=global_params)
         compute_time = time.time() - start_time

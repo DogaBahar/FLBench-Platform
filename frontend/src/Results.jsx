@@ -30,10 +30,16 @@ export default function Results() {
         if (data.global_metrics && data.global_metrics.metrics_distributed) {
           const accData = data.global_metrics.metrics_distributed.accuracy || [];
           const lossData = data.global_metrics.losses_distributed || [];
+          const stdData = data.global_metrics.fairness_metrics?.accuracy_std || [];
+          const worstData = data.global_metrics.fairness_metrics?.worst_client_accuracy || [];
+          const stdByRound = Object.fromEntries(stdData.map(([r, v]) => [r, v]));
+          const worstByRound = Object.fromEntries(worstData.map(([r, v]) => [r, v]));
           data.chartData = accData.map((item, index) => ({
             round: item[0],
             accuracy: item[1] * 100, // Convert to percentage
-            loss: lossData[index] ? lossData[index][1] : 0
+            loss: lossData[index] ? lossData[index][1] : 0,
+            accuracyStd: (stdByRound[item[0]] || 0) * 100,
+            worstClientAccuracy: item[0] in worstByRound ? worstByRound[item[0]] * 100 : null
           }));
         }
 
@@ -150,6 +156,17 @@ export default function Results() {
     return (allValues.reduce((a, b) => a + b, 0) / allValues.length).toFixed(2);
   };
 
+  // Gap between the global (weighted-avg) accuracy and the single worst
+  // client's accuracy on the final round -- a quick fairness-under-non-IID
+  // read that a single averaged accuracy number can't show.
+  const getFairnessGap = () => {
+    const rounds = runData?.chartData;
+    if (!rounds || rounds.length === 0) return null;
+    const last = rounds[rounds.length - 1];
+    if (last.worstClientAccuracy === null || last.worstClientAccuracy === undefined) return null;
+    return (last.accuracy - last.worstClientAccuracy).toFixed(2);
+  };
+
   return (
     <div>
       <h2>Benchmark History</h2>
@@ -230,6 +247,12 @@ export default function Results() {
                   <div style={{ fontSize: '0.8rem', color: '#666' }}>Avg CPU Usage</div>
                   <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{getAvgClientMetric(runData.client_logs, 'cpu_usage_percent')}%</div>
                 </div>
+                {getFairnessGap() !== null && (
+                  <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #ec4899' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>Accuracy Fairness Gap (Last Round)</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{getFairnessGap()} pp</div>
+                  </div>
+                )}
               </div>
 
               {/* Chart Grid */}
@@ -244,6 +267,21 @@ export default function Results() {
                       <YAxis domain={[0, 100]}/>
                       <Tooltip />
                       <Line type="monotone" dataKey="accuracy" stroke="#0070f3" strokeWidth={3} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div style={{ height: '300px' }}>
+                  <h4 style={{ margin: '0 0 1rem 0' }}>Client Accuracy Fairness (%)</h4>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={runData.chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="round" />
+                      <YAxis domain={[0, 100]}/>
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" name="Global Avg" dataKey="accuracy" stroke="#0070f3" strokeWidth={2} />
+                      <Line type="monotone" name="Worst Client" dataKey="worstClientAccuracy" stroke="#ec4899" strokeWidth={2} strokeDasharray="5 5" connectNulls />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

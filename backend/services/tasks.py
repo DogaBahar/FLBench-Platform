@@ -39,8 +39,11 @@ def _persist_round_metrics(run_id: str, telemetry_data: dict) -> None:
     global_metrics = telemetry_data.get("global_metrics", {})
     acc_by_round = dict(global_metrics.get("metrics_distributed", {}).get("accuracy", []))
     loss_by_round = dict(global_metrics.get("losses_distributed", []))
+    fairness = global_metrics.get("fairness_metrics", {})
+    std_by_round = dict(fairness.get("accuracy_std", []))
+    worst_by_round = dict(fairness.get("worst_client_accuracy", []))
 
-    rounds_seen = set(acc_by_round) | set(loss_by_round)
+    rounds_seen = set(acc_by_round) | set(loss_by_round) | set(std_by_round) | set(worst_by_round)
     per_round = {}
     for client in telemetry_data.get("client_logs", []):
         for log in client.get("logs", []):
@@ -63,6 +66,8 @@ def _persist_round_metrics(run_id: str, telemetry_data: dict) -> None:
             round_number=r,
             accuracy=acc_by_round.get(r),
             loss=loss_by_round.get(r),
+            accuracy_std=std_by_round.get(r),
+            worst_client_accuracy=worst_by_round.get(r),
             # communication_time_ms / network_bytes_received have no measured
             # signal in any adapter today -- left NULL rather than fabricated.
             training_time_ms=int((bucket["time"] / count) * 1000) if count else None,

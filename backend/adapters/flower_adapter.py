@@ -122,6 +122,7 @@ class CustomStrategy(FedProx if "{strategy_base_class}" == "FedProx" else FedAvg
         total_examples = 0
         weighted_loss = 0.0
         weighted_acc = 0.0
+        per_client_lines = []
         for msg in replies:
             try:
                 m = msg.content["metrics"]
@@ -129,6 +130,18 @@ class CustomStrategy(FedProx if "{strategy_base_class}" == "FedProx" else FedAvg
                 weighted_loss += m["loss"] * n
                 weighted_acc += m["accuracy"] * n
                 total_examples += n
+                # Each client's own eval of this round's global model on its
+                # local held-out split -- fairness across clients (accuracy
+                # std, worst-client accuracy) is derived from these below,
+                # not just the weighted average.
+                per_client_lines.append(json.dumps({{
+                    "type": "client_eval_metric",
+                    "client_id": f"client_{{m.get('partition-id', 'unknown')}}",
+                    "round": server_round,
+                    "loss": m["loss"],
+                    "accuracy": m["accuracy"],
+                    "num_samples": n
+                }}))
             except Exception:
                 continue
 
@@ -139,6 +152,8 @@ class CustomStrategy(FedProx if "{strategy_base_class}" == "FedProx" else FedAvg
         avg_acc = weighted_acc / total_examples
 
         with open("/app/workspace/metrics.jsonl", "a") as f:
+            for line in per_client_lines:
+                f.write(line + "\\n")
             f.write(json.dumps({{
                 "type": "server_metric",
                 "round": server_round,
@@ -277,7 +292,7 @@ def train_fn(msg: Message, context: Context):
 
 @app.evaluate()
 def evaluate_fn(msg: Message, context: Context):
-    _, _, testloader = _load_partition(context)
+    partition_id, _, testloader = _load_partition(context)
 
     model = get_model()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
@@ -287,6 +302,7 @@ def evaluate_fn(msg: Message, context: Context):
         "loss": float(loss),
         "accuracy": float(accuracy),
         "num-examples": len(testloader.dataset),
+        "partition-id": partition_id,
     })
     content = RecordDict({"metrics": metrics})
     return Message(content=content, reply_to=msg)
