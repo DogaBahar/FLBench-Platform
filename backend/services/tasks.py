@@ -116,6 +116,13 @@ def run_benchmark_task(self, run_id: str, payload: dict):
 
         # 5. Archive per-round metrics into Postgres, then mark complete
         telemetry_data = get_run_telemetry(run_id)
+
+        if not telemetry_data["global_metrics"]["metrics_distributed"]["accuracy"]:
+            raise RuntimeError(
+                "Run exited without producing any round metrics -- the FL framework likely "
+                "aborted mid-run. Check server/client logs under SHARED_RUN_DIR for this run."
+            )
+
         _persist_round_metrics(run_id, telemetry_data)
 
         run_record.status = "COMPLETED"
@@ -126,6 +133,7 @@ def run_benchmark_task(self, run_id: str, payload: dict):
         db_session.rollback()
         run_record.status = "FAILED"
         run_record.completed_at = datetime.utcnow()
+        run_record.error_message = str(e)
         db_session.commit()
         logger.exception("Benchmark run %s failed", run_id)
         raise e

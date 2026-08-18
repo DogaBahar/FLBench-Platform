@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey, BigInteger
+from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey, BigInteger, Text
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -17,9 +17,10 @@ class BenchmarkRun(Base):
     batch_size = Column(Integer, nullable=False)
     
     # State tracking: PENDING, RUNNING, COMPLETED, FAILED
-    status = Column(String(20), default="PENDING")    
+    status = Column(String(20), default="PENDING")
     started_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
 
     metrics = relationship("BenchmarkMetric", back_populates="run", cascade="all, delete")
 

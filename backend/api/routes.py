@@ -125,6 +125,7 @@ def handle_specific_run(run_id):
             "run_id": run.id,
             "framework": run.framework,
             "status": run.status,
+            "error_message": run.error_message,
             "config": {
                 "dataset": run.dataset,
                 "strategy": run.strategy,

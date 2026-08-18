@@ -115,12 +115,8 @@ class FlareAdapter(FLFrameworkAdapter):
                         "args": {
                             "launcher_id": "launcher",
                             "pipe_id": "pipe",
-                            # We don't set metrics= on the returned FLModel (evaluation is
-                            # reported out-of-band to metrics.jsonl, see train_script.py).
-                            # Without this, the executor treats every round's result as
-                            # "missing result metrics" and aborts the whole workflow after
-                            # round 1.
-                            "train_with_evaluation": False
+                            "train_with_evaluation": False,
+                            "external_pre_init_timeout": 300.0
                         }
                     }
                 }
