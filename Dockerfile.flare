@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Install NVFlare, PyTorch, Hugging Face Datasets, and PSUtil
 RUN pip install --no-cache-dir \
-    --index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
     torch torchvision && \
     pip install --no-cache-dir \
     datasets \
