@@ -54,7 +54,7 @@ services:
   celery_worker:
     build: 
       context: ./backend
-    command: celery -A services.tasks.celery_app worker --loglevel=info
+    command: celery -A services.tasks.celery_app worker --loglevel=info --concurrency=4
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/fl_benchmark
       - CELERY_BROKER_URL=redis://redis:6379/0
