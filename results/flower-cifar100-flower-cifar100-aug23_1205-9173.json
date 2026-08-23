@@ -1,0 +1,477 @@
+{
+  "completed_at": "2026-08-23T12:06:43.629561",
+  "config": {
+    "batch_size": 32,
+    "epochs": 3,
+    "full_config": {
+      "clients": 2,
+      "config": {
+        "data_simulation": {
+          "dataset": "cifar100",
+          "partition_strategy": "iid",
+          "samples_per_client": 500
+        },
+        "federated_settings": {
+          "fraction_fit": 1.0,
+          "proximal_mu": 0.01,
+          "rounds": 5,
+          "strategy": "FedAvg"
+        },
+        "ml_hyperparameters": {
+          "batch_size": 32,
+          "epochs": 3,
+          "learning_rate": 0.001,
+          "optimizer": "adam"
+        }
+      },
+      "framework": "flower"
+    },
+    "rounds": 5
+  },
+  "dataset": "cifar100",
+  "exported_at": "2026-08-23T12:06:53.167870+00:00",
+  "framework": "flower",
+  "results": {
+    "client_logs": [
+      {
+        "client_id": "client_0",
+        "logs": [
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.3158438205718994,
+            "cpu_usage_percent": 3.9,
+            "iowait": 0.0,
+            "peak_memory_mb": 647.51953125,
+            "round": 1
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.3412599563598633,
+            "cpu_usage_percent": 1.0,
+            "iowait": 0.0,
+            "peak_memory_mb": 644.97265625,
+            "round": 2
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.445504903793335,
+            "cpu_usage_percent": 1.0,
+            "iowait": 0.0,
+            "peak_memory_mb": 644.22265625,
+            "round": 3
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.662160873413086,
+            "cpu_usage_percent": 1.0,
+            "iowait": 0.0,
+            "peak_memory_mb": 651.75390625,
+            "round": 4
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.3970720767974854,
+            "cpu_usage_percent": 1.0,
+            "iowait": 0.0,
+            "peak_memory_mb": 644.5859375,
+            "round": 5
+          }
+        ]
+      },
+      {
+        "client_id": "client_1",
+        "logs": [
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.3696091175079346,
+            "cpu_usage_percent": 3.0,
+            "iowait": 0.0,
+            "peak_memory_mb": 642.76171875,
+            "round": 1
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.569079875946045,
+            "cpu_usage_percent": 1.1,
+            "iowait": 0.0,
+            "peak_memory_mb": 644.44140625,
+            "round": 2
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.5964937210083008,
+            "cpu_usage_percent": 1.1,
+            "iowait": 0.0,
+            "peak_memory_mb": 651.98046875,
+            "round": 3
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.453927755355835,
+            "cpu_usage_percent": 1.0,
+            "iowait": 0.0,
+            "peak_memory_mb": 644.43359375,
+            "round": 4
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.3966217041015625,
+            "compute_time_seconds": 1.3814640045166016,
+            "cpu_usage_percent": 1.0,
+            "iowait": 0.0,
+            "peak_memory_mb": 652.0234375,
+            "round": 5
+          }
+        ]
+      }
+    ],
+    "distributions": {
+      "client_0": {
+        "0": 3,
+        "10": 7,
+        "11": 3,
+        "12": 5,
+        "13": 6,
+        "14": 1,
+        "15": 7,
+        "16": 4,
+        "17": 6,
+        "18": 3,
+        "19": 7,
+        "2": 5,
+        "20": 2,
+        "21": 8,
+        "22": 2,
+        "23": 3,
+        "24": 3,
+        "25": 3,
+        "27": 4,
+        "28": 5,
+        "29": 6,
+        "3": 3,
+        "30": 9,
+        "31": 5,
+        "32": 4,
+        "33": 2,
+        "34": 4,
+        "35": 4,
+        "36": 3,
+        "37": 3,
+        "38": 6,
+        "39": 1,
+        "4": 7,
+        "40": 4,
+        "41": 4,
+        "42": 6,
+        "43": 6,
+        "44": 6,
+        "45": 5,
+        "46": 6,
+        "47": 10,
+        "48": 7,
+        "49": 3,
+        "5": 5,
+        "50": 5,
+        "51": 5,
+        "52": 5,
+        "53": 3,
+        "54": 5,
+        "55": 5,
+        "56": 5,
+        "57": 3,
+        "58": 4,
+        "59": 3,
+        "6": 6,
+        "60": 3,
+        "61": 7,
+        "62": 4,
+        "63": 2,
+        "64": 5,
+        "65": 4,
+        "66": 1,
+        "67": 10,
+        "68": 4,
+        "69": 4,
+        "7": 4,
+        "70": 5,
+        "71": 2,
+        "72": 5,
+        "73": 6,
+        "74": 1,
+        "75": 6,
+        "76": 7,
+        "77": 5,
+        "78": 5,
+        "79": 2,
+        "8": 3,
+        "80": 6,
+        "81": 6,
+        "82": 4,
+        "83": 5,
+        "84": 7,
+        "85": 9,
+        "86": 3,
+        "87": 3,
+        "88": 6,
+        "9": 2,
+        "90": 7,
+        "91": 5,
+        "92": 6,
+        "93": 2,
+        "94": 8,
+        "95": 3,
+        "96": 2,
+        "97": 7,
+        "98": 4,
+        "99": 5
+      },
+      "client_1": {
+        "0": 3,
+        "1": 6,
+        "10": 3,
+        "11": 1,
+        "12": 3,
+        "13": 3,
+        "14": 4,
+        "15": 5,
+        "17": 5,
+        "18": 4,
+        "19": 5,
+        "2": 4,
+        "20": 6,
+        "21": 4,
+        "22": 5,
+        "23": 6,
+        "24": 8,
+        "25": 5,
+        "26": 4,
+        "27": 6,
+        "28": 5,
+        "29": 7,
+        "3": 3,
+        "30": 3,
+        "31": 3,
+        "32": 7,
+        "33": 6,
+        "34": 6,
+        "35": 3,
+        "36": 6,
+        "37": 6,
+        "38": 2,
+        "39": 4,
+        "4": 4,
+        "40": 6,
+        "41": 4,
+        "42": 4,
+        "43": 2,
+        "45": 1,
+        "46": 2,
+        "47": 4,
+        "48": 6,
+        "49": 3,
+        "5": 9,
+        "50": 6,
+        "51": 8,
+        "52": 5,
+        "53": 5,
+        "54": 8,
+        "55": 5,
+        "56": 4,
+        "57": 4,
+        "58": 3,
+        "59": 3,
+        "6": 3,
+        "60": 5,
+        "61": 3,
+        "62": 5,
+        "63": 7,
+        "64": 2,
+        "65": 5,
+        "66": 4,
+        "67": 3,
+        "68": 4,
+        "69": 4,
+        "7": 4,
+        "70": 6,
+        "71": 3,
+        "72": 4,
+        "73": 7,
+        "74": 2,
+        "75": 6,
+        "76": 3,
+        "77": 9,
+        "78": 6,
+        "79": 6,
+        "8": 5,
+        "80": 6,
+        "81": 4,
+        "82": 4,
+        "83": 7,
+        "84": 7,
+        "85": 5,
+        "86": 8,
+        "87": 5,
+        "88": 3,
+        "89": 1,
+        "9": 5,
+        "90": 7,
+        "91": 5,
+        "92": 3,
+        "93": 4,
+        "94": 5,
+        "95": 2,
+        "96": 6,
+        "97": 6,
+        "98": 2,
+        "99": 2
+      }
+    },
+    "global_metrics": {
+      "fairness_metrics": {
+        "accuracy_std": [
+          [
+            1,
+            0.02
+          ],
+          [
+            2,
+            0.0
+          ],
+          [
+            3,
+            0.03
+          ],
+          [
+            4,
+            0.02
+          ],
+          [
+            5,
+            0.03
+          ]
+        ],
+        "worst_client_accuracy": [
+          [
+            1,
+            0.0
+          ],
+          [
+            2,
+            0.02
+          ],
+          [
+            3,
+            0.04
+          ],
+          [
+            4,
+            0.04
+          ],
+          [
+            5,
+            0.02
+          ]
+        ]
+      },
+      "losses_distributed": [
+        [
+          1,
+          4.443171977996826
+        ],
+        [
+          2,
+          4.4701433181762695
+        ],
+        [
+          3,
+          4.496985018253326
+        ],
+        [
+          4,
+          5.02020400762558
+        ],
+        [
+          5,
+          5.364584028720856
+        ]
+      ],
+      "metrics_distributed": {
+        "accuracy": [
+          [
+            1,
+            0.02
+          ],
+          [
+            2,
+            0.02
+          ],
+          [
+            3,
+            0.07
+          ],
+          [
+            4,
+            0.06
+          ],
+          [
+            5,
+            0.05
+          ]
+        ]
+      },
+      "wall_clock_time_seconds": 36.81
+    },
+    "server_logs": [
+      {
+        "aggregation_time_sec": 0.018689870834350586,
+        "iowait_time": 0.0,
+        "round": 1,
+        "tcp_established": 812,
+        "tcp_time_wait": 1222
+      },
+      {
+        "aggregation_time_sec": 0.01653456687927246,
+        "iowait_time": 0.0,
+        "round": 2,
+        "tcp_established": 812,
+        "tcp_time_wait": 1222
+      },
+      {
+        "aggregation_time_sec": 0.013605356216430664,
+        "iowait_time": 0.0,
+        "round": 3,
+        "tcp_established": 812,
+        "tcp_time_wait": 1222
+      },
+      {
+        "aggregation_time_sec": 0.0069544315338134766,
+        "iowait_time": 0.0,
+        "round": 4,
+        "tcp_established": 812,
+        "tcp_time_wait": 1222
+      },
+      {
+        "aggregation_time_sec": 0.006683349609375,
+        "iowait_time": 0.0,
+        "round": 5,
+        "tcp_established": 812,
+        "tcp_time_wait": 1222
+      }
+    ]
+  },
+  "run_id": "flower-cifar100-aug23_1205-9173",
+  "schema_version": 1,
+  "started_at": "2026-08-23T12:05:53.109524",
+  "status": "COMPLETED",
+  "strategy": "FedAvg",
+  "submitted_by": "doga"
+}
