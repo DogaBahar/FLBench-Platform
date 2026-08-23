@@ -1,0 +1,1307 @@
+[
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 1000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 2,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 5,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 8,
+    "config": {
+      "federated_settings": {
+        "rounds": 15,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 4000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedProx",
+        "fraction_fit": 1,
+        "proximal_mu": 0.01
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "shard",
+        "shards_per_client": 2
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedProx",
+        "fraction_fit": 1,
+        "proximal_mu": 0.01
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "shard",
+        "shards_per_client": 2
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedAvg",
+        "fraction_fit": 1
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "dirichlet",
+        "alpha": 0.5
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 5,
+    "config": {
+      "federated_settings": {
+        "rounds": 10,
+        "strategy": "FedProx",
+        "fraction_fit": 1,
+        "proximal_mu": 0.01
+      },
+      "ml_hyperparameters": {
+        "epochs": 3,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "optimizer": "adam"
+      },
+      "data_simulation": {
+        "dataset": "cifar100",
+        "samples_per_client": 2000,
+        "partition_strategy": "dirichlet",
+        "alpha": 0.5
+      }
+    }
+  }
+]
