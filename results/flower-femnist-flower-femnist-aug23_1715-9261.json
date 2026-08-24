@@ -1,0 +1,1088 @@
+{
+  "completed_at": "2026-08-23T17:22:10.078110",
+  "config": {
+    "batch_size": 32,
+    "epochs": 3,
+    "full_config": {
+      "clients": 5,
+      "config": {
+        "data_simulation": {
+          "dataset": "femnist",
+          "partition_strategy": "iid",
+          "samples_per_client": 4000
+        },
+        "federated_settings": {
+          "fraction_fit": 1.0,
+          "proximal_mu": 0.01,
+          "rounds": 10,
+          "strategy": "FedAvg"
+        },
+        "ml_hyperparameters": {
+          "batch_size": 32,
+          "epochs": 3,
+          "learning_rate": 0.001,
+          "optimizer": "adam"
+        }
+      },
+      "framework": "flower"
+    },
+    "rounds": 10
+  },
+  "dataset": "femnist",
+  "exported_at": "2026-08-23T17:22:12.340794+00:00",
+  "framework": "flower",
+  "results": {
+    "client_logs": [
+      {
+        "client_id": "client_4",
+        "logs": [
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.786831855773926,
+            "cpu_usage_percent": 3.9,
+            "iowait": 0.0,
+            "peak_memory_mb": 862.55859375,
+            "round": 1
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 13.724605083465576,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 926.6328125,
+            "round": 2
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 12.143607139587402,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 947.078125,
+            "round": 3
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 14.413144588470459,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 930.68359375,
+            "round": 4
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 14.43660044670105,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 930.7578125,
+            "round": 5
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.942339181900024,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 917.30859375,
+            "round": 6
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 13.6667799949646,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 944.51171875,
+            "round": 7
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 14.28861927986145,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 944.51953125,
+            "round": 8
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 13.284812450408936,
+            "cpu_usage_percent": 2.5,
+            "iowait": 0.0,
+            "peak_memory_mb": 950.80859375,
+            "round": 9
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.691237449645996,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 962.92578125,
+            "round": 10
+          }
+        ]
+      },
+      {
+        "client_id": "client_0",
+        "logs": [
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.201599836349487,
+            "cpu_usage_percent": 3.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 861.7734375,
+            "round": 1
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.466398477554321,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 911.7109375,
+            "round": 2
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.936529874801636,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 943.6328125,
+            "round": 3
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 10.089337348937988,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 904.4375,
+            "round": 4
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.877980470657349,
+            "cpu_usage_percent": 2.1,
+            "iowait": 0.0,
+            "peak_memory_mb": 918.40234375,
+            "round": 5
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 11.526650667190552,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 962.76953125,
+            "round": 6
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.912153959274292,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 931.01953125,
+            "round": 7
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 12.439630031585693,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 966.19140625,
+            "round": 8
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.84826397895813,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 962.890625,
+            "round": 9
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 12.187355995178223,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 935.8671875,
+            "round": 10
+          }
+        ]
+      },
+      {
+        "client_id": "client_3",
+        "logs": [
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 13.068916082382202,
+            "cpu_usage_percent": 4.1,
+            "iowait": 0.0,
+            "peak_memory_mb": 884.27734375,
+            "round": 1
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 11.780136108398438,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 897.18359375,
+            "round": 2
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 11.522268533706665,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 942.44140625,
+            "round": 3
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 12.342652559280396,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 916.6328125,
+            "round": 4
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 12.465486764907837,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 922.953125,
+            "round": 5
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 12.272245407104492,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 935.44140625,
+            "round": 6
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 10.131719589233398,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 962.8046875,
+            "round": 7
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.75595474243164,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 931.0703125,
+            "round": 8
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.855326414108276,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 929.9609375,
+            "round": 9
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 11.468932390213013,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 952.3515625,
+            "round": 10
+          }
+        ]
+      },
+      {
+        "client_id": "client_1",
+        "logs": [
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 11.651109457015991,
+            "cpu_usage_percent": 3.1,
+            "iowait": 0.0,
+            "peak_memory_mb": 884.60546875,
+            "round": 1
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 10.638432264328003,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 937.33984375,
+            "round": 2
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 10.76666784286499,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 904.35546875,
+            "round": 3
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.815330028533936,
+            "cpu_usage_percent": 2.2,
+            "iowait": 0.0,
+            "peak_memory_mb": 956.5,
+            "round": 4
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.763930082321167,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 910.875,
+            "round": 5
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.92906379699707,
+            "cpu_usage_percent": 2.5,
+            "iowait": 0.0,
+            "peak_memory_mb": 924.734375,
+            "round": 6
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 12.357170581817627,
+            "cpu_usage_percent": 2.5,
+            "iowait": 0.0,
+            "peak_memory_mb": 966.09765625,
+            "round": 7
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.15942931175232,
+            "cpu_usage_percent": 2.2,
+            "iowait": 0.0,
+            "peak_memory_mb": 929.9296875,
+            "round": 8
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.710912704467773,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 938.75390625,
+            "round": 9
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.041573762893677,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 931.12890625,
+            "round": 10
+          }
+        ]
+      },
+      {
+        "client_id": "client_2",
+        "logs": [
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 12.43757438659668,
+            "cpu_usage_percent": 3.1,
+            "iowait": 0.0,
+            "peak_memory_mb": 884.35546875,
+            "round": 1
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 10.340697526931763,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 897.8359375,
+            "round": 2
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 14.335043668746948,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 931.765625,
+            "round": 3
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.686081409454346,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 948.8203125,
+            "round": 4
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.523694515228271,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 962.72265625,
+            "round": 5
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 14.464834928512573,
+            "cpu_usage_percent": 2.5,
+            "iowait": 0.0,
+            "peak_memory_mb": 938.09375,
+            "round": 6
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 8.928406238555908,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 923.375,
+            "round": 7
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 10.233507871627808,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 962.86328125,
+            "round": 8
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 11.993391513824463,
+            "cpu_usage_percent": 2.3,
+            "iowait": 0.0,
+            "peak_memory_mb": 935.8359375,
+            "round": 9
+          },
+          {
+            "action": "fit",
+            "comm_size_mb": 6.320060729980469,
+            "compute_time_seconds": 9.481600761413574,
+            "cpu_usage_percent": 2.4,
+            "iowait": 0.0,
+            "peak_memory_mb": 936.26953125,
+            "round": 10
+          }
+        ]
+      }
+    ],
+    "distributions": {
+      "client_0": {
+        "0": 201,
+        "1": 207,
+        "10": 36,
+        "11": 21,
+        "12": 65,
+        "13": 23,
+        "14": 16,
+        "15": 53,
+        "16": 8,
+        "17": 11,
+        "18": 48,
+        "19": 19,
+        "2": 158,
+        "20": 8,
+        "21": 24,
+        "22": 60,
+        "23": 32,
+        "24": 109,
+        "25": 53,
+        "26": 12,
+        "27": 31,
+        "28": 100,
+        "29": 60,
+        "3": 179,
+        "30": 62,
+        "31": 22,
+        "32": 26,
+        "33": 13,
+        "34": 18,
+        "35": 14,
+        "36": 47,
+        "37": 29,
+        "38": 13,
+        "39": 42,
+        "4": 165,
+        "40": 148,
+        "41": 13,
+        "42": 20,
+        "43": 42,
+        "44": 9,
+        "45": 10,
+        "46": 14,
+        "47": 90,
+        "48": 21,
+        "49": 60,
+        "5": 165,
+        "50": 12,
+        "51": 9,
+        "52": 10,
+        "53": 85,
+        "54": 19,
+        "55": 102,
+        "56": 9,
+        "57": 8,
+        "58": 11,
+        "59": 15,
+        "6": 165,
+        "60": 10,
+        "61": 14,
+        "7": 192,
+        "8": 164,
+        "9": 198
+      },
+      "client_1": {
+        "0": 164,
+        "1": 195,
+        "10": 37,
+        "11": 22,
+        "12": 52,
+        "13": 21,
+        "14": 26,
+        "15": 52,
+        "16": 20,
+        "17": 19,
+        "18": 66,
+        "19": 22,
+        "2": 178,
+        "20": 9,
+        "21": 34,
+        "22": 50,
+        "23": 39,
+        "24": 127,
+        "25": 40,
+        "26": 24,
+        "27": 32,
+        "28": 103,
+        "29": 45,
+        "3": 208,
+        "30": 70,
+        "31": 23,
+        "32": 28,
+        "33": 22,
+        "34": 30,
+        "35": 17,
+        "36": 54,
+        "37": 25,
+        "38": 6,
+        "39": 49,
+        "4": 165,
+        "40": 131,
+        "41": 12,
+        "42": 20,
+        "43": 51,
+        "44": 10,
+        "45": 13,
+        "46": 12,
+        "47": 84,
+        "48": 15,
+        "49": 51,
+        "5": 170,
+        "50": 8,
+        "51": 13,
+        "52": 11,
+        "53": 69,
+        "54": 6,
+        "55": 94,
+        "56": 10,
+        "57": 15,
+        "58": 12,
+        "59": 16,
+        "6": 166,
+        "60": 6,
+        "61": 13,
+        "7": 180,
+        "8": 169,
+        "9": 169
+      },
+      "client_2": {
+        "0": 157,
+        "1": 193,
+        "10": 28,
+        "11": 24,
+        "12": 41,
+        "13": 17,
+        "14": 26,
+        "15": 58,
+        "16": 12,
+        "17": 16,
+        "18": 58,
+        "19": 16,
+        "2": 188,
+        "20": 15,
+        "21": 29,
+        "22": 49,
+        "23": 41,
+        "24": 129,
+        "25": 47,
+        "26": 7,
+        "27": 32,
+        "28": 92,
+        "29": 52,
+        "3": 191,
+        "30": 69,
+        "31": 32,
+        "32": 24,
+        "33": 18,
+        "34": 33,
+        "35": 13,
+        "36": 60,
+        "37": 36,
+        "38": 15,
+        "39": 53,
+        "4": 180,
+        "40": 130,
+        "41": 14,
+        "42": 19,
+        "43": 43,
+        "44": 14,
+        "45": 7,
+        "46": 15,
+        "47": 77,
+        "48": 13,
+        "49": 67,
+        "5": 176,
+        "50": 11,
+        "51": 15,
+        "52": 15,
+        "53": 55,
+        "54": 13,
+        "55": 100,
+        "56": 20,
+        "57": 7,
+        "58": 17,
+        "59": 15,
+        "6": 155,
+        "60": 15,
+        "61": 12,
+        "7": 194,
+        "8": 178,
+        "9": 152
+      },
+      "client_3": {
+        "0": 175,
+        "1": 189,
+        "10": 30,
+        "11": 23,
+        "12": 55,
+        "13": 32,
+        "14": 18,
+        "15": 54,
+        "16": 23,
+        "17": 10,
+        "18": 54,
+        "19": 25,
+        "2": 163,
+        "20": 15,
+        "21": 28,
+        "22": 53,
+        "23": 45,
+        "24": 142,
+        "25": 36,
+        "26": 15,
+        "27": 30,
+        "28": 103,
+        "29": 53,
+        "3": 184,
+        "30": 66,
+        "31": 24,
+        "32": 20,
+        "33": 9,
+        "34": 23,
+        "35": 13,
+        "36": 55,
+        "37": 25,
+        "38": 14,
+        "39": 46,
+        "4": 175,
+        "40": 122,
+        "41": 12,
+        "42": 21,
+        "43": 47,
+        "44": 13,
+        "45": 10,
+        "46": 13,
+        "47": 79,
+        "48": 17,
+        "49": 70,
+        "5": 142,
+        "50": 8,
+        "51": 13,
+        "52": 24,
+        "53": 81,
+        "54": 19,
+        "55": 101,
+        "56": 14,
+        "57": 15,
+        "58": 10,
+        "59": 19,
+        "6": 181,
+        "60": 7,
+        "61": 14,
+        "7": 163,
+        "8": 187,
+        "9": 173
+      },
+      "client_4": {
+        "0": 207,
+        "1": 206,
+        "10": 34,
+        "11": 23,
+        "12": 46,
+        "13": 22,
+        "14": 28,
+        "15": 52,
+        "16": 14,
+        "17": 13,
+        "18": 52,
+        "19": 18,
+        "2": 177,
+        "20": 13,
+        "21": 20,
+        "22": 41,
+        "23": 39,
+        "24": 129,
+        "25": 52,
+        "26": 14,
+        "27": 32,
+        "28": 104,
+        "29": 44,
+        "3": 186,
+        "30": 65,
+        "31": 24,
+        "32": 19,
+        "33": 12,
+        "34": 24,
+        "35": 10,
+        "36": 53,
+        "37": 18,
+        "38": 7,
+        "39": 59,
+        "4": 173,
+        "40": 145,
+        "41": 12,
+        "42": 20,
+        "43": 55,
+        "44": 18,
+        "45": 9,
+        "46": 14,
+        "47": 76,
+        "48": 16,
+        "49": 62,
+        "5": 171,
+        "50": 12,
+        "51": 15,
+        "52": 9,
+        "53": 78,
+        "54": 14,
+        "55": 86,
+        "56": 20,
+        "57": 11,
+        "58": 14,
+        "59": 12,
+        "6": 156,
+        "60": 13,
+        "61": 12,
+        "7": 166,
+        "8": 176,
+        "9": 178
+      }
+    },
+    "global_metrics": {
+      "fairness_metrics": {
+        "accuracy_std": [
+          [
+            1,
+            0.0174
+          ],
+          [
+            2,
+            0.0146
+          ],
+          [
+            3,
+            0.0154
+          ],
+          [
+            4,
+            0.0129
+          ],
+          [
+            5,
+            0.0078
+          ],
+          [
+            6,
+            0.0094
+          ],
+          [
+            7,
+            0.017
+          ],
+          [
+            8,
+            0.0095
+          ],
+          [
+            9,
+            0.0123
+          ],
+          [
+            10,
+            0.0134
+          ]
+        ],
+        "worst_client_accuracy": [
+          [
+            1,
+            0.6
+          ],
+          [
+            2,
+            0.77
+          ],
+          [
+            3,
+            0.7875
+          ],
+          [
+            4,
+            0.805
+          ],
+          [
+            5,
+            0.8175
+          ],
+          [
+            6,
+            0.82
+          ],
+          [
+            7,
+            0.795
+          ],
+          [
+            8,
+            0.815
+          ],
+          [
+            9,
+            0.8125
+          ],
+          [
+            10,
+            0.8125
+          ]
+        ]
+      },
+      "losses_distributed": [
+        [
+          1,
+          1.708617300253648
+        ],
+        [
+          2,
+          0.7189227062922258
+        ],
+        [
+          3,
+          0.6477327908460911
+        ],
+        [
+          4,
+          0.6160209997342183
+        ],
+        [
+          5,
+          0.6212362697491279
+        ],
+        [
+          6,
+          0.636040396300646
+        ],
+        [
+          7,
+          0.6636582929354448
+        ],
+        [
+          8,
+          0.6811434106184886
+        ],
+        [
+          9,
+          0.7100453243805813
+        ],
+        [
+          10,
+          0.7239023641898081
+        ]
+      ],
+      "metrics_distributed": {
+        "accuracy": [
+          [
+            1,
+            0.621
+          ],
+          [
+            2,
+            0.7865
+          ],
+          [
+            3,
+            0.8085
+          ],
+          [
+            4,
+            0.8215
+          ],
+          [
+            5,
+            0.8265
+          ],
+          [
+            6,
+            0.8325
+          ],
+          [
+            7,
+            0.8255
+          ],
+          [
+            8,
+            0.8295
+          ],
+          [
+            9,
+            0.8325
+          ],
+          [
+            10,
+            0.829
+          ]
+        ]
+      },
+      "wall_clock_time_seconds": 358.57
+    },
+    "server_logs": [
+      {
+        "aggregation_time_sec": 0.03070235252380371,
+        "iowait_time": 0.0,
+        "round": 1,
+        "tcp_established": 828,
+        "tcp_time_wait": 1116
+      },
+      {
+        "aggregation_time_sec": 0.02236485481262207,
+        "iowait_time": 0.0,
+        "round": 2,
+        "tcp_established": 828,
+        "tcp_time_wait": 20
+      },
+      {
+        "aggregation_time_sec": 0.022748231887817383,
+        "iowait_time": 0.0,
+        "round": 3,
+        "tcp_established": 828,
+        "tcp_time_wait": 30
+      },
+      {
+        "aggregation_time_sec": 0.021730661392211914,
+        "iowait_time": 0.0,
+        "round": 4,
+        "tcp_established": 828,
+        "tcp_time_wait": 28
+      },
+      {
+        "aggregation_time_sec": 0.021584749221801758,
+        "iowait_time": 0.0,
+        "round": 5,
+        "tcp_established": 828,
+        "tcp_time_wait": 30
+      },
+      {
+        "aggregation_time_sec": 0.02150273323059082,
+        "iowait_time": 0.0,
+        "round": 6,
+        "tcp_established": 828,
+        "tcp_time_wait": 30
+      },
+      {
+        "aggregation_time_sec": 0.014390707015991211,
+        "iowait_time": 0.0,
+        "round": 7,
+        "tcp_established": 826,
+        "tcp_time_wait": 30
+      },
+      {
+        "aggregation_time_sec": 0.014275550842285156,
+        "iowait_time": 0.0,
+        "round": 8,
+        "tcp_established": 826,
+        "tcp_time_wait": 30
+      },
+      {
+        "aggregation_time_sec": 0.024761438369750977,
+        "iowait_time": 0.0,
+        "round": 9,
+        "tcp_established": 826,
+        "tcp_time_wait": 30
+      },
+      {
+        "aggregation_time_sec": 0.015065431594848633,
+        "iowait_time": 0.0,
+        "round": 10,
+        "tcp_established": 826,
+        "tcp_time_wait": 30
+      }
+    ]
+  },
+  "run_id": "flower-femnist-aug23_1715-9261",
+  "schema_version": 1,
+  "started_at": "2026-08-23T17:15:57.144034",
+  "status": "COMPLETED",
+  "strategy": "FedAvg",
+  "submitted_by": "doga"
+}
