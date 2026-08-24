@@ -1,1 +1,8 @@
 jsonschema==4.23.0
+
+# generate_thesis_analysis.py only
+pandas
+numpy
+matplotlib
+seaborn
+scipy
