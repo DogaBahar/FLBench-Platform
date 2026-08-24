@@ -138,7 +138,13 @@ class DashboardClientTrainer(ClientTrainer):
         train(self.model, self.trainloader, {epochs}, {learning_rate}, "{optimizer_name}", mu=mu, global_params=global_params)
 
         compute_time = time.time() - start_time
-        cpu_usage = psutil.cpu_percent(interval=None)
+        # psutil.cpu_percent() with no Process target is system-wide (whatever
+        # else happens to be running on the host), not this process's own usage.
+        # Process().cpu_percent(interval=None) would be process-scoped but needs
+        # a prior call on the *same* Process object to baseline against -- a
+        # fresh object here every call would just always read 0.0 -- so block
+        # briefly instead to measure synchronously regardless of prior state.
+        cpu_usage = psutil.Process().cpu_percent(interval=0.1)
         ram_usage = psutil.Process().memory_info().rss / (1024 * 1024)
         comm_mb = sum(v.element_size() * v.nelement() for v in self.model.state_dict().values()) / (1024 * 1024)
 

@@ -1,8 +1,9 @@
 """
-Builds the Flower-vs-NVFlare comparative analysis (accuracy distribution,
+Builds the Flower/NVFlare/FedML comparative analysis (accuracy distribution,
 scalability trends, matched-config paired comparison, preliminary
-heterogeneity observations) from results/*.json, and writes figures + data
-tables to docs/analysis/.
+heterogeneity observations, and a resource/data-engineering comparison of
+RAM and server aggregation time) from results/*.json, and writes figures +
+data tables to docs/analysis/.
 
 Requires: pandas, numpy, matplotlib, seaborn, scipy (not stdlib-only, unlike
 the other scripts/ tools -- install with:
@@ -26,9 +27,23 @@ task's container recreation unblocks the original task's container.wait()
 early. Such runs always have wall_clock_time_seconds == 0 (that telemetry
 line is only written on genuine completion), which this script uses as the
 exclusion filter -- see build_dataframe()'s `truncated` mask.
+
+Known data-quality issue #2: NVFlare runs collected before the per-container
+thread cap fix (OMP_NUM_THREADS/MKL_NUM_THREADS in orchestration.py) have
+inflated, highly variable wall-clock/compute/aggregation timing from the same
+contention that caused issue #1 above, even when their round count is valid.
+See NVFLARE_TIMING_CLEAN_CUTOFF -- applied only to timing figures/stats, not
+accuracy (which isn't wall-clock-dependent).
+
+Known data-quality issue #3: cpu_usage_percent was measured via bare
+psutil.cpu_percent() (system-wide host load, not this process's own usage)
+in all three adapters until this was caught and fixed to
+Process().cpu_percent(). No run collected before the fix has valid data for
+this field -- it's excluded from all figures/stats here, not just filtered.
 """
 import argparse
 import glob
+import itertools
 import json
 import os
 
@@ -47,6 +62,28 @@ DS_LABEL = {"cifar100": "CIFAR-100", "femnist": "FEMNIST"}
 # heterogeneity/FedProx sweep -- matches the fixed point used when that sweep was
 # designed (see scripts/flower_sweep.json's generator). Edit if you redesign it.
 HETEROGENEITY_REP_CONFIG = dict(clients=5, rounds=10, samples_per_client=2000, dataset="cifar100")
+
+# NVFlare runs started before this timestamp predate the per-container thread
+# cap fix (OMP_NUM_THREADS/MKL_NUM_THREADS in orchestration.py) and were
+# collected while a container-orphaning contention bug was active (see
+# module docstring's item (a)) -- their wall-clock/compute-time/aggregation-
+# time numbers are inflated and highly variable as a result (observed: pre
+# ~15.1s +/- 15.6s vs post ~3.7s +/- 0.75s mean aggregation time on the same
+# workload), even for runs whose round count is otherwise valid. Accuracy is
+# unaffected (that's a property of the training itself, not wall-clock), so
+# this filter is applied only for timing/resource figures and stats, never
+# for accuracy. Adjust this if you know the actual fix-deployment time on
+# your own re-run.
+NVFLARE_TIMING_CLEAN_CUTOFF = pd.Timestamp("2026-08-24 19:51:00")
+
+
+def clean_timing_subset(df: pd.DataFrame) -> pd.DataFrame:
+    is_stale_nvflare = (df["framework"] == "nvflare") & (df["started_at"] < NVFLARE_TIMING_CLEAN_CUTOFF)
+    dropped = is_stale_nvflare.sum()
+    if dropped:
+        print(f"(timing figures/stats only) excluding {dropped} pre-fix NVFlare run(s) "
+              f"with contaminated timing data, started before {NVFLARE_TIMING_CLEAN_CUTOFF}")
+    return df[~is_stale_nvflare].copy()
 
 
 def load_results(results_dir: str) -> pd.DataFrame:
@@ -277,6 +314,52 @@ def fig_heterogeneity(clean: pd.DataFrame, out_dir: str):
     plt.close(fig)
 
 
+def fig_ram_by_framework(base: pd.DataFrame, out_dir: str):
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
+    pal = {FW_LABEL[f]: PALETTE[f] for f in frameworks}
+    sns.boxplot(data=base, x="dataset_label", y="avg_peak_memory_mb", hue="framework_label",
+                palette=pal, ax=ax, showfliers=False, width=0.6)
+    sns.stripplot(data=base, x="dataset_label", y="avg_peak_memory_mb", hue="framework_label",
+                  dodge=True, palette=pal, ax=ax, alpha=0.5, size=4, legend=False,
+                  edgecolor="white", linewidth=0.3)
+    ax.set_xlabel("")
+    ax.set_ylabel("Avg. peak client RAM (MB)")
+    ax.set_title("Peak client memory usage by framework (base grid, IID/FedAvg)")
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[:len(frameworks)], labels[:len(frameworks)], title="Framework",
+              loc="upper left", frameon=True)
+    fig.tight_layout()
+    fig.savefig(f"{out_dir}/fig7_ram_by_framework.png", dpi=200)
+    fig.savefig(f"{out_dir}/fig7_ram_by_framework.pdf")
+    plt.close(fig)
+
+
+def fig_aggregation_time_by_framework(clean: pd.DataFrame, out_dir: str):
+    timing = clean_timing_subset(clean)
+    base = timing[(timing["partition_strategy"] == "iid") & (timing["strategy"] == "FedAvg")]
+    frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
+    pal = {FW_LABEL[f]: PALETTE[f] for f in frameworks}
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    sns.boxplot(data=base, x="dataset_label", y="avg_aggregation_time_sec", hue="framework_label",
+                palette=pal, ax=ax, showfliers=False, width=0.6)
+    sns.stripplot(data=base, x="dataset_label", y="avg_aggregation_time_sec", hue="framework_label",
+                  dodge=True, palette=pal, ax=ax, alpha=0.5, size=4, legend=False,
+                  edgecolor="white", linewidth=0.3)
+    ax.set_yscale("symlog", linthresh=0.1)
+    ax.set_xlabel("")
+    ax.set_ylabel("Avg. server aggregation time (s, log scale)")
+    ax.set_title("Server aggregation time by framework\n(NVFlare restricted to post-fix runs -- see module docstring)")
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[:len(frameworks)], labels[:len(frameworks)], title="Framework",
+              loc="upper left", frameon=True)
+    fig.tight_layout()
+    fig.savefig(f"{out_dir}/fig8_aggregation_time_by_framework.png", dpi=200)
+    fig.savefig(f"{out_dir}/fig8_aggregation_time_by_framework.pdf")
+    plt.close(fig)
+
+
 def print_stats(clean: pd.DataFrame):
     base = clean[(clean["partition_strategy"] == "iid") & (clean["strategy"] == "FedAvg")]
     frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
@@ -288,7 +371,7 @@ def print_stats(clean: pd.DataFrame):
     if len(frameworks) >= 2:
         pivot = base.pivot_table(index=["dataset", "clients", "rounds", "samples_per_client"],
                                   columns="framework", values="final_accuracy", aggfunc="first")
-        for fw_a, fw_b in zip(frameworks, frameworks[1:]):
+        for fw_a, fw_b in itertools.combinations(frameworks, 2):
             pair = pivot[[fw_a, fw_b]].dropna()
             if len(pair) < 2:
                 continue
@@ -311,6 +394,24 @@ def print_stats(clean: pd.DataFrame):
                     continue
                 r, p = stats.pearsonr(sub[xvar], sub["final_accuracy"])
                 print(f"  {fw:8s} {dsname:10s}: r={r:+.3f} p={p:.4f} n={len(sub)}")
+
+    print("\n=== RAM: avg peak client memory (MB) -- valid across all runs ===")
+    print(base.groupby(["framework", "dataset"])["avg_peak_memory_mb"]
+          .agg(["mean", "std", "min", "max", "count"]).round(1))
+
+    timing = clean_timing_subset(clean)
+    timing_base = timing[(timing["partition_strategy"] == "iid") & (timing["strategy"] == "FedAvg")]
+    print("\n=== Server aggregation time (s) -- NVFlare restricted to post-fix runs ===")
+    print(timing_base.groupby(["framework", "dataset"])["avg_aggregation_time_sec"]
+          .agg(["mean", "std", "min", "max", "count"]).round(3))
+
+    print("\nNote: avg_comm_size_mb is identical across all frameworks (raw serialized parameter "
+          "size of the same shared model architecture, not actual wire-protocol overhead) -- not "
+          "a differentiating metric, omitted from figures.")
+    print("Note: cpu_usage_percent is excluded entirely. Historically measured via bare "
+          "psutil.cpu_percent() (system-wide load, not this process's own usage) in all three "
+          "adapters -- fixed to Process().cpu_percent() going forward, but no existing run has "
+          "valid data for this field.")
 
 
 def main():
@@ -352,6 +453,8 @@ def main():
                      "Accuracy vs. local data volume per client", args.out_dir)
     fig_convergence_curves(clean, args.results_dir, args.out_dir)
     fig_heterogeneity(clean, args.out_dir)
+    fig_ram_by_framework(base, args.out_dir)
+    fig_aggregation_time_by_framework(clean, args.out_dir)
     print(f"\nFigures + CSVs written to {args.out_dir}/")
 
     print_stats(clean)
