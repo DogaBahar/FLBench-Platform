@@ -27,7 +27,18 @@ class DockerOrchestrator:
                 env_vars = {
                     "RUN_ID": run_id,
                     "HF_DATASETS_CACHE": "/app/data/huggingface",
-                    "TORCH_HOME": "/app/data/torch"
+                    "TORCH_HOME": "/app/data/torch",
+                    # Without this, torch/OpenMP defaults to one thread per
+                    # visible host core -- on a many-core host that's
+                    # thousands of threads per container, and several
+                    # concurrent runs (e.g. a redelivered/retried task
+                    # racing the original, see services/tasks.py's
+                    # task_acks_late) turns into severe oversubscription
+                    # that starves everything, including the Docker daemon
+                    # itself, making the APIError/ConnectionError retries
+                    # that cause that race more likely in the first place.
+                    "OMP_NUM_THREADS": "4",
+                    "MKL_NUM_THREADS": "4",
                 }
                 if "env" in spec:
                     env_vars.update(spec["env"])
