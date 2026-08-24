@@ -49,7 +49,14 @@ model_args:
   model: "FlexibleCNN"
 
 train_args:
-  federated_optimizer: "{strategy_name}"
+  # Always "FedAvg" here regardless of the benchmark's actual strategy: this
+  # installed FedML version's cross-silo Server.__init__ dispatch only
+  # recognizes "FedAvg"/"LSA"/"SA" for a custom ServerAggregator and raises a
+  # bare Exception for anything else, including "FedProx". The proximal term
+  # itself is applied independently in DashboardClientTrainer.train() below
+  # via mu/global_params, so FedML's own optimizer label never needs to know
+  # which strategy is actually in effect.
+  federated_optimizer: "FedAvg"
   client_num_in_total: {num_clients}
   client_num_per_round: {num_clients}
   comm_round: {num_rounds}
