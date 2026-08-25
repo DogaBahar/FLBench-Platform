@@ -52,7 +52,7 @@ services:
       start_period: 15s
 
   celery_worker:
-    build: 
+    build:
       context: ./backend
     command: celery -A services.tasks.celery_app worker --loglevel=info --concurrency=4
     environment:
@@ -60,6 +60,10 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - SHARED_RUN_DIR=/tmp/fl_benchmark_runs
+      # Off unless set in the host shell/.env before `docker compose up`, e.g.
+      # `USE_GPU=true docker compose up -d --build`. See core/config.py --
+      # requires the NVIDIA Container Toolkit configured on the host first.
+      - USE_GPU=${USE_GPU:-false}
     volumes:
       - ./backend:/app
       - /tmp/fl_benchmark_runs:/tmp/fl_benchmark_runs

@@ -259,6 +259,14 @@ def train_fn(msg: Message, context: Context):
     model = get_model()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
 
+    # model.py's train()/test() infer device from the model itself
+    # (next(net.parameters()).device) and move each batch to match, so
+    # moving the model here is the only change needed -- mirrors the same
+    # pattern already used in the NVFlare/FedML adapters. Falls back to CPU
+    # automatically if no GPU is visible in this container.
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
     mu = float(run_config["proximal-mu"])
     global_params = [p.detach().clone() for p in model.parameters()] if mu > 0 else None
 
@@ -296,6 +304,7 @@ def evaluate_fn(msg: Message, context: Context):
 
     model = get_model()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
+    model.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
     loss, accuracy = test(model, testloader)
     metrics = MetricRecord({

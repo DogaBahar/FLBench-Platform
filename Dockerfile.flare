@@ -6,8 +6,13 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Install NVFlare, PyTorch, Hugging Face Datasets, and PSUtil
+# CUDA 12.1 build: torch wheels bundle their own CUDA runtime, so this only
+# needs the host driver to support CUDA >=12.1, not an exact match. Requires
+# the host to have the NVIDIA Container Toolkit configured and USE_GPU=true
+# set on backend/celery_worker (see core/config.py) -- see Dockerfile.flower
+# for the full explanation of the fallback behavior.
 RUN pip install --no-cache-dir \
-    --extra-index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://download.pytorch.org/whl/cu121 \
     torch torchvision && \
     pip install --no-cache-dir \
     datasets \

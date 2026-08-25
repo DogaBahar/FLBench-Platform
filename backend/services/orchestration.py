@@ -53,7 +53,7 @@ class DockerOrchestrator:
                 except docker.errors.NotFound:
                     pass
 
-                container = self.client.containers.run(
+                run_kwargs = dict(
                     image=spec["image"],
                     command=spec["command"],
                     name=container_name,
@@ -66,6 +66,19 @@ class DockerOrchestrator:
                     detach=True,
                     environment=env_vars
                 )
+                if config.USE_GPU:
+                    # count=-1 requests all visible GPUs rather than pinning
+                    # to one -- fine at this model size (a few hundred MB of
+                    # VRAM per client against 46GB/GPU), and lets each
+                    # framework's own scheduling (Ray for Flower, one process
+                    # per participant for FedML) place work across whichever
+                    # GPUs are free rather than this orchestrator having to
+                    # track per-run GPU assignment itself.
+                    run_kwargs["device_requests"] = [
+                        docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])
+                    ]
+
+                container = self.client.containers.run(**run_kwargs)
                 containers.append(container)
                 
                 if spec['name'] == 'server':

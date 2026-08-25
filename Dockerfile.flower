@@ -5,8 +5,17 @@ WORKDIR /app
 # Install git for Hugging Face datasets
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
+# CUDA 12.1 build: torch wheels bundle their own CUDA runtime, so this only
+# needs the host driver to support CUDA >=12.1 (backward compatible), not an
+# exact match -- works against newer drivers too (e.g. one reporting 13.0).
+# Requires the host to have the NVIDIA Container Toolkit configured and
+# USE_GPU=true set on backend/celery_worker (see core/config.py) -- falls
+# back to CPU automatically at the Python level (torch.cuda.is_available())
+# if GPU access wasn't actually granted to the container, but won't fall
+# back if USE_GPU=true and the toolkit itself is missing (container creation
+# fails outright in that case).
 RUN pip install --no-cache-dir \
-    --extra-index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://download.pytorch.org/whl/cu121 \
     torch torchvision && \
     pip install --no-cache-dir \
     datasets \
