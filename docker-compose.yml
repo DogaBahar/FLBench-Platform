@@ -41,10 +41,6 @@ services:
       redis:
         condition: service_started
     healthcheck:
-      # Also doubles as the signal that this container's entrypoint has
-      # already run scripts/migrate.py -- celery_worker waits on this being
-      # healthy before running its own entrypoint, so the two containers
-      # never race each other applying the same Alembic migration.
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/api/health')"]
       interval: 5s
       timeout: 5s
@@ -60,14 +56,10 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - SHARED_RUN_DIR=/tmp/fl_benchmark_runs
-      # Off unless set in the host shell/.env before `docker compose up`, e.g.
-      # `USE_GPU=true docker compose up -d --build`. See core/config.py --
-      # requires the NVIDIA Container Toolkit configured on the host first.
       - USE_GPU=${USE_GPU:-false}
     volumes:
       - ./backend:/app
       - /tmp/fl_benchmark_runs:/tmp/fl_benchmark_runs
-      # Mount the Docker socket so Celery can spawn FL framework containers
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:

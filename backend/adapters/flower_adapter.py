@@ -206,12 +206,6 @@ def main(grid, context: Context) -> None:
         with open(os.path.join(output_dir, "server_app.py"), "w") as f:
             f.write(server_app_code)
 
-        # --- client_app.py ---
-        # context.node_config["partition-id"]/["num-partitions"] are populated
-        # automatically by the Simulation Engine per simulated client based on
-        # `options.num-supernodes` above -- no manual per-client wiring needed
-        # (unlike the Deployment Engine's --node-config, which this adapter
-        # does not use).
         client_app_code = """
 import time
 import torch
@@ -259,11 +253,6 @@ def train_fn(msg: Message, context: Context):
     model = get_model()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
 
-    # model.py's train()/test() infer device from the model itself
-    # (next(net.parameters()).device) and move each batch to match, so
-    # moving the model here is the only change needed -- mirrors the same
-    # pattern already used in the NVFlare/FedML adapters. Falls back to CPU
-    # automatically if no GPU is visible in this container.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 

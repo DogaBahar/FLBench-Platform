@@ -21,12 +21,6 @@ class Config:
     
     SHARED_RUN_DIR = os.getenv("SHARED_RUN_DIR", "/tmp/fl_benchmark_runs")
     DATA_CACHE_DIR = os.getenv("DATA_CACHE_DIR", "/tmp/fl_benchmark_data")
-
-    # Off by default: requesting GPU device access on a host without the
-    # NVIDIA Container Toolkit configured makes container creation fail
-    # outright (docker.errors.APIError), not fall back to CPU -- verify with
-    # `docker run --gpus all --rm nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi`
-    # on the host before enabling.
     USE_GPU = os.getenv("USE_GPU", "false").lower() == "true"
 
 config = Config()
