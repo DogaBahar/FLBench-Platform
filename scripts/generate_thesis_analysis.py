@@ -109,6 +109,24 @@ def clean_cpu_subset(df: pd.DataFrame) -> pd.DataFrame:
     return df[~is_stale].copy()
 
 
+def base_grid(df: pd.DataFrame) -> pd.DataFrame:
+    # The IID/FedAvg "base grid" is meant to be a controlled sweep: only
+    # clients/rounds/samples_per_client/dataset vary, everything else
+    # (epochs/batch_size/optimizer/etc.) is held fixed at the study's
+    # standard values. Side-studies that intentionally use different
+    # hyperparameters to match an external comparison point (e.g.
+    # scripts/unifed_comparison*.json, which uses epochs=1/batch_size=8/
+    # optimizer=sgd to match a specific paper's setup) also happen to be
+    # IID/FedAvg, so filtering on partition_strategy/strategy alone lets
+    # them leak into the scalability/accuracy analysis as if they were
+    # uncontrolled points on the same grid -- they aren't, and mixing them
+    # in silently corrupts trend correlations (confirmed: a single such run
+    # per framework was enough to flip two rounds/clients correlations from
+    # positive to significantly negative). epochs==3 is what every genuine
+    # base-grid config uses, across every sweep file to date.
+    return df[(df["partition_strategy"] == "iid") & (df["strategy"] == "FedAvg") & (df["epochs"] == 3)]
+
+
 def load_results(results_dir: str) -> pd.DataFrame:
     files = sorted(glob.glob(os.path.join(results_dir, "*.json")))
     files = [f for f in files if not f.endswith("schema.json")]
@@ -207,15 +225,6 @@ CONFIG_IDENTITY_COLS = ["framework", "dataset", "clients", "rounds", "samples_pe
 
 
 def dedupe_latest_per_config(df: pd.DataFrame) -> pd.DataFrame:
-    # Reruns (e.g. scripts/reconcile_sweep.py output, or a manual rerun of a
-    # subset of configs) land as new run_ids alongside the originals -- nothing
-    # in results/ ever gets overwritten. Left as-is, every stat/figure here
-    # would silently average old and new runs of the *same* config together,
-    # which is wrong in two ways: it inflates n (double-counting one config as
-    # two data points) and, worse, mixes runs from before/after a code fix
-    # (e.g. the CPU-measurement fix, or NVFlare's thread-cap fix) as if they
-    # were independent replicates of the same measurement. Keep only the most
-    # recently started run per unique config.
     before = len(df)
     df = df.sort_values("started_at").drop_duplicates(subset=CONFIG_IDENTITY_COLS, keep="last")
     dropped = before - len(df)
@@ -235,7 +244,7 @@ def fig_accuracy_by_framework(base: pd.DataFrame, out_dir: str):
                   edgecolor="white", linewidth=0.3)
     ax.set_xlabel("")
     ax.set_ylabel("Final accuracy")
-    ax.set_title("Final accuracy distribution by framework (base grid, IID/FedAvg)")
+    ax.set_title("Final accuracy distribution by framework")
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[:len(frameworks)], labels[:len(frameworks)], title="Framework",
               loc="upper left", frameon=True)
@@ -263,7 +272,7 @@ def fig_scalability(base: pd.DataFrame, xvar: str, xlabel: str, fname: str, titl
         xt = sorted(base.loc[base["dataset"] == dsname, xvar].unique())
         if xt:
             ax.set_xticks(xt)
-    axes[0].set_ylabel("Final accuracy (mean ± SD across other grid dims)")
+    axes[0].set_ylabel("Final accuracy")
     axes[1].legend(title="Framework", loc="best", frameon=True)
     fig.suptitle(title, y=1.02)
     fig.tight_layout()
@@ -273,7 +282,7 @@ def fig_scalability(base: pd.DataFrame, xvar: str, xlabel: str, fname: str, titl
 
 
 def fig_convergence_curves(clean: pd.DataFrame, results_dir: str, out_dir: str):
-    base = clean[(clean["partition_strategy"] == "iid") & (clean["strategy"] == "FedAvg")]
+    base = base_grid(clean)
     pivot = base.pivot_table(index=["dataset", "clients", "rounds", "samples_per_client"],
                               columns="framework", values="run_id", aggfunc="first")
     frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
@@ -382,7 +391,7 @@ def fig_ram_by_framework(base: pd.DataFrame, out_dir: str):
 
 def fig_aggregation_time_by_framework(clean: pd.DataFrame, out_dir: str):
     timing = clean_timing_subset(clean)
-    base = timing[(timing["partition_strategy"] == "iid") & (timing["strategy"] == "FedAvg")]
+    base = base_grid(timing)
     frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
     pal = {FW_LABEL[f]: PALETTE[f] for f in frameworks}
 
@@ -407,7 +416,7 @@ def fig_aggregation_time_by_framework(clean: pd.DataFrame, out_dir: str):
 
 def fig_cpu_by_framework(clean: pd.DataFrame, out_dir: str):
     cpu = clean_cpu_subset(clean)
-    base = cpu[(cpu["partition_strategy"] == "iid") & (cpu["strategy"] == "FedAvg")]
+    base = base_grid(cpu)
     frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
     if not frameworks:
         print("No post-CPU-fix runs available yet -- skipping fig9.")
@@ -424,7 +433,7 @@ def fig_cpu_by_framework(clean: pd.DataFrame, out_dir: str):
     ax.set_ylabel("Avg. client CPU usage (%)")
     missing = [FW_LABEL[f] for f in ["flower", "nvflare", "fedml"] if f not in frameworks]
     subtitle = f" ({', '.join(missing)} not yet rerun post-fix)" if missing else ""
-    ax.set_title(f"Client CPU usage by framework (post-fix runs only){subtitle}")
+    ax.set_title(f"Client CPU usage by framework{subtitle}")
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[:len(frameworks)], labels[:len(frameworks)], title="Framework",
               loc="upper left", frameon=True)
@@ -435,7 +444,7 @@ def fig_cpu_by_framework(clean: pd.DataFrame, out_dir: str):
 
 
 def print_stats(clean: pd.DataFrame):
-    base = clean[(clean["partition_strategy"] == "iid") & (clean["strategy"] == "FedAvg")]
+    base = base_grid(clean)
     frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
 
     print("\n=== Summary stats (base grid, IID/FedAvg) ===")
@@ -474,7 +483,7 @@ def print_stats(clean: pd.DataFrame):
           .agg(["mean", "std", "min", "max", "count"]).round(1))
 
     timing = clean_timing_subset(clean)
-    timing_base = timing[(timing["partition_strategy"] == "iid") & (timing["strategy"] == "FedAvg")]
+    timing_base = base_grid(timing)
     print("\n=== Server aggregation time (s) -- NVFlare restricted to post-fix runs ===")
     print(timing_base.groupby(["framework", "dataset"])["avg_aggregation_time_sec"]
           .agg(["mean", "std", "min", "max", "count"]).round(3))
@@ -483,7 +492,7 @@ def print_stats(clean: pd.DataFrame):
           "size of the same shared model architecture, not actual wire-protocol overhead) -- not "
           "a differentiating metric, omitted from figures.")
     cpu = clean_cpu_subset(clean)
-    cpu_base = cpu[(cpu["partition_strategy"] == "iid") & (cpu["strategy"] == "FedAvg")]
+    cpu_base = base_grid(cpu)
     if len(cpu_base):
         print("\n=== CPU: avg client usage (%) -- post-fix runs only (see CPU_CLEAN_CUTOFF) ===")
         print(cpu_base.groupby(["framework", "dataset"])["avg_cpu_usage_percent"]
@@ -513,7 +522,7 @@ def main():
     df.to_csv(f"{args.out_dir}/runs_all.csv", index=False)
     clean.to_csv(f"{args.out_dir}/runs_clean.csv", index=False)
 
-    base = clean[(clean["partition_strategy"] == "iid") & (clean["strategy"] == "FedAvg")]
+    base = base_grid(clean)
     base.groupby(["framework", "dataset"])["final_accuracy"].agg(
         ["mean", "std", "min", "max", "count"]).round(4).to_csv(f"{args.out_dir}/summary_stats.csv")
 

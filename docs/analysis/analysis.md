@@ -1,8 +1,8 @@
 # FL Benchmark Platform — Comparative Analysis (Flower vs. NVFlare vs. FedML)
 
-*Full three-framework analysis (accuracy + resource/data-engineering comparison) generated from
-`results/*.json`, 2026-08-25 (post Flower/NVFlare base-grid rerun). Figures: `fig1`–`fig9` (PNG
-for preview, PDF for LaTeX embedding). Regenerate anytime with
+*Full three-framework analysis (accuracy + resource/data-engineering comparison), complete
+including CPU, generated from `results/*.json`, 2026-08-25 (post Flower/NVFlare/FedML base-grid
+reruns). Figures: `fig1`–`fig9` (PNG for preview, PDF for LaTeX embedding). Regenerate anytime with
 `python3 scripts/generate_thesis_analysis.py`.*
 
 ## 1. Experimental setup
@@ -69,20 +69,37 @@ server initializes correctly post-fix. All 3 FedProx configs were rerun successf
 own usage — see §6.3 for the full story. After fixing this (and, separately, applying a
 per-container thread cap that fixed a related resource-contention issue affecting NVFlare's
 timing data), the Flower and NVFlare base grids (54 configs each) were rerun from scratch on
-2026-08-25 to get valid CPU data and, for NVFlare, a larger clean-timing sample. FedML's grid was
-**not** rerun — its original Aug 24 data remains the authoritative source for FedML throughout
-this analysis, since it doesn't have the timing-contamination issue that motivated NVFlare's
-rerun and predates the CPU fix by only a few hours anyway.
+2026-08-25 to get valid CPU data and, for NVFlare, a larger clean-timing sample. FedML's base grid
+was rerun the same way shortly after, completing the three-framework CPU comparison in §6.3.
 
 Since reruns always get fresh `run_id`s, `results/` now has old and new entries for the same 54
-Flower/NVFlare configs side by side. `generate_thesis_analysis.py`'s `dedupe_latest_per_config()`
-keeps only the most recent valid run per unique config (matched on
+configs side by side, for all three frameworks. `generate_thesis_analysis.py`'s
+`dedupe_latest_per_config()` keeps only the most recent valid run per unique config (matched on
 framework/dataset/clients/rounds/samples/partition/strategy, not `run_id`) — applied *after*
 excluding corrupted runs (§2a), so a corrupted rerun correctly falls back to an earlier valid
 attempt rather than leaving that config missing entirely.
 
-The clean dataset used throughout this analysis is **186 runs** (312 completed − 13 excluded −
-113 superseded-by-rerun duplicates).
+**(d) Base-grid contamination from a hyperparameter-mismatched side-study.** Separately from the
+main sweep, two runs were collected to compare against an external paper (UniFed) using
+deliberately different hyperparameters to match that paper's setup (`epochs=1`, `batch_size=8`,
+`optimizer=sgd`, `clients=10`, `rounds=25`, `samples_per_client=226` — vs. the main study's fixed
+`epochs=3`/`batch_size=32`/`optimizer=adam` and `clients∈{2,5,8}`/`rounds∈{5,10,15}`). Because
+these runs also happen to use `partition_strategy=iid`/`strategy=FedAvg`, an early version of
+`generate_thesis_analysis.py`'s base-grid filter (which only checked those two fields) silently
+included them as if they were two more uncontrolled points on the same scalability grid. The
+effect was severe for how small the contamination was: two runs (one Flower, one FedML) were
+enough to drop FEMNIST accuracy minimums to 5–13% (vs. a normal 65–87% range) and flip two
+rounds/clients correlations from positive to significantly negative. Fixed by adding
+`epochs == 3` to the base-grid filter (factored into a single `base_grid()` helper used
+everywhere in the script, rather than the same filter condition duplicated seven times, which is
+how the first version of the bug happened to only partially get noticed). The UniFed-comparison
+runs remain in `results/` and are still available for their intended purpose — comparing against
+the paper directly — just correctly excluded from this study's own internal grid.
+
+The clean dataset used throughout this analysis is **188 runs** (368 completed − 13 excluded −
+167 superseded-by-rerun duplicates), of which the base IID/FedAvg grid proper (§3–§4, §6) is
+**171 runs**: 54 each for NVFlare and FedML (27 configs × 2 datasets), 63 for Flower (54 + 9 extra
+pilot-phase points at 500 samples/client, CIFAR-100 only).
 
 ## 3. Framework comparison
 
@@ -297,7 +314,7 @@ and FedML's aggregation is a pure in-memory weighted average. Worth stating expl
 trade-off — NVFlare's persistence buys fault-tolerance/resume capability the other two don't have,
 at a real, measured, now well-confirmed wall-clock cost per round.
 
-### 6.3 CPU usage (Figure 9, `fig9_cpu_by_framework`) — newly available
+### 6.3 CPU usage (Figure 9, `fig9_cpu_by_framework`) — now complete for all three frameworks
 
 **The earlier draft of this analysis excluded CPU entirely.** All three adapters measured it via
 bare `psutil.cpu_percent()`, which returns **system-wide** host load (whatever else happens to be
@@ -312,28 +329,33 @@ adapters create a fresh `Process()` object each call rather than holding a persi
 an unprimed `interval=None` call would always read `0.0`). The fix is empirically confirmed active
 from **2026-08-24 23:26** onward (`CPU_CLEAN_CUTOFF`) — CPU values jump from a uniformly
 implausible <3% before that instant to a consistent, plausible 10–20% range after it, across every
-framework, at the exact same timestamp.
+framework, at the exact same timestamp. All three frameworks' base grids were rerun post-fix
+(§2c), so this table is now on the same full footing as RAM and aggregation time.
 
 | Framework | Dataset  | Mean CPU % | SD   | n  |
 |-----------|----------|------------|------|----|
 | Flower    | CIFAR-100| 14.04      | 1.86 | 27 |
+| FedML     | CIFAR-100| 15.10      | 0.86 | 27 |
 | NVFlare   | CIFAR-100| 16.36      | 1.43 | 27 |
 | Flower    | FEMNIST  | 12.20      | 1.07 | 27 |
+| FedML     | FEMNIST  | 14.57      | 1.16 | 27 |
 | NVFlare   | FEMNIST  | 15.84      | 1.23 | 23 |
 
-**FedML is absent from this table** — its sweep was not rerun after the CPU fix (§2c), so it has
-zero valid post-cutoff data. This is the one piece of the "full three-framework, four-metric"
-resource comparison still outstanding; a FedML-only rerun (54 configs, same as the Flower/NVFlare
-reruns already done) would complete it.
-
-**Finding**: NVFlare consistently uses *more* CPU than Flower on both datasets (~16% vs. ~13%),
-the opposite direction from the RAM finding (§6.1, where NVFlare was lowest). Combined with §6.2's
-aggregation-time result, a coherent picture emerges: NVFlare trades higher CPU utilization and
-substantially higher aggregation latency for lower memory footprint — consistent with a
-checkpoint-persistence design doing more active work (serialization, disk I/O) per round in
-exchange for a smaller resident memory footprint between rounds. This is a genuinely interesting
-trade-off finding, not just a ranking, and pairs naturally with §6.1/§6.2 in a thesis "systems
-trade-offs" discussion.
+**Finding**: a clean, consistent three-way ordering on *both* datasets — Flower lowest, FedML in
+the middle, NVFlare highest — with tight within-framework variance throughout (SD under 2
+percentage points in every group). This is the inverse of the RAM ordering (§6.1: NVFlare lowest,
+Flower middle, FedML highest), which is the more interesting result: no framework is simply
+"more efficient" across the board, each sits at a different point on a CPU/RAM trade-off curve.
+Combined with §6.2's aggregation-time result (NVFlare ~250–300× Flower's, ~1000× FedML's), a
+coherent systems picture emerges: NVFlare's checkpoint-persistence design spends more CPU time and
+far more wall-clock time per round on serialization/disk I/O, in exchange for the smallest memory
+footprint; FedML's fully-distributed, one-process-per-participant architecture sits in the middle
+on CPU and aggregation time but costs the most RAM, plausibly from per-process Python/torch/GRPC
+overhead multiplied across separate containers; Flower's in-process Ray-actor simulation is
+lightest on CPU and aggregation time at a middling RAM cost. None of the three metrics alone tells
+this story — it only emerges from having all three (plus accuracy) side by side, which is the
+core argument for why this platform's four-metric comparison is more informative than any single
+number a framework's own README might quote.
 
 ### 6.4 What still isn't usable
 
@@ -344,13 +366,15 @@ compression). Real, but not differentiating, so no figure was built for it.
 
 ## 7. Limitations & recommended next steps
 
-1. **All major data-quality issues identified so far are resolved or actively mitigated** (§2) —
-   NVFlare corruption is rerun clean (with dedup correctly falling back to valid earlier runs
-   where a rerun attempt was itself corrupted), the FedML FedProx crash has a confirmed root
-   cause and fix, and the CPU measurement bug is fixed with an empirically-verified cutoff.
-2. **FedML has no CPU data** (§6.3) — the only remaining gap in the four-metric resource
-   comparison. A FedML-only rerun of the 54-config base grid (mirroring what was already done for
-   Flower/NVFlare) would complete it.
+1. **All data-quality issues identified during this study are resolved** (§2) — NVFlare
+   corruption is rerun clean (with dedup correctly falling back to valid earlier runs where a
+   rerun attempt was itself corrupted), the FedML FedProx crash has a confirmed root cause and
+   fix, the CPU measurement bug is fixed with an empirically-verified cutoff and rerun for all
+   three frameworks, and a base-grid contamination bug (a hyperparameter-mismatched side-study
+   leaking into the controlled grid) was caught and fixed the same day it was introduced.
+2. **The resource comparison (§6) is now complete** — RAM, aggregation time, and CPU all have
+   full or near-full sample sizes (n=27, occasionally 23-26) across all three frameworks. This
+   was the main open item from the previous draft and is no longer outstanding.
 3. **Heterogeneity sweep is still single-replicate** (§5) — 3 frameworks, but n=1/condition. The
    two "notable patterns" flagged there need repeat runs (different seeds, same config) before
    they can support a thesis claim rather than just motivate one.
@@ -358,10 +382,15 @@ compression). Real, but not differentiating, so no figure was built for it.
    around 64–87%) — expected given short local training (3 epochs), no LR schedule, and this being
    a *relative* framework/scalability comparison rather than an attempt at state-of-the-art
    accuracy. Caveat any absolute number quoted out of context.
-5. **The FedML accuracy gap (§3) and RAM/CPU trade-off (§6.1, §6.3) are documented but not fully
-   explained mechanistically.** Worth a short follow-up investigation (e.g. comparing per-round
-   loss curves, or profiling where NVFlare's extra CPU time actually goes) if the thesis wants to
-   make a causal claim about *why*, not just *that*.
+5. **The FedML accuracy gap (§3) and the RAM/CPU/aggregation-time trade-offs (§6) are documented
+   but not fully explained mechanistically.** Worth a short follow-up investigation (e.g. comparing
+   per-round loss curves, or profiling where NVFlare's extra CPU/aggregation time actually goes)
+   if the thesis wants to make a causal claim about *why*, not just *that*.
+6. **Watch for the same class of bug that caused §2(d)** if more side-studies get added
+   alongside the main sweep (e.g. more paper comparisons) — anything sharing `partition_strategy`/
+   `strategy` with the main grid but different `epochs`/`batch_size`/`optimizer` needs either a
+   distinguishing marker in `base_grid()`'s filter or to live in a clearly separate results
+   directory, or it risks silently re-contaminating the controlled comparison the same way.
 
 ## Figure index
 
@@ -375,8 +404,8 @@ compression). Real, but not differentiating, so no figure was built for it.
 | `fig6_heterogeneity_preliminary.png/pdf` | Partition strategy × FedProx, all 3 frameworks |
 | `fig7_ram_by_framework.png/pdf` | Peak client RAM by framework |
 | `fig8_aggregation_time_by_framework.png/pdf` | Server aggregation time (NVFlare post-fix only) |
-| `fig9_cpu_by_framework.png/pdf` | Client CPU usage (Flower & NVFlare only, post-fix) |
+| `fig9_cpu_by_framework.png/pdf` | Client CPU usage, all 3 frameworks (post-fix) |
 
-Data files: `runs_clean.csv` (186-run clean dataset), `runs_all.csv` (all 312 before
+Data files: `runs_clean.csv` (188-run clean dataset), `runs_all.csv` (all 368 before
 exclusion/dedup), `matched_configs.csv` (54 configs matched across all 3 frameworks),
 `summary_stats.csv`.
