@@ -1,0 +1,46 @@
+[
+  {
+    "framework": "flower",
+    "clients": 10,
+    "config": {
+      "federated_settings": {
+        "rounds": 25,
+        "strategy": "FedAvg",
+        "fraction_fit": 0.2
+      },
+      "ml_hyperparameters": {
+        "epochs": 1,
+        "batch_size": 8,
+        "learning_rate": 0.001,
+        "optimizer": "sgd"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 226,
+        "partition_strategy": "iid"
+      }
+    }
+  },
+  {
+    "framework": "fedml",
+    "clients": 10,
+    "config": {
+      "federated_settings": {
+        "rounds": 25,
+        "strategy": "FedAvg",
+        "fraction_fit": 1.0
+      },
+      "ml_hyperparameters": {
+        "epochs": 1,
+        "batch_size": 8,
+        "learning_rate": 0.001,
+        "optimizer": "sgd"
+      },
+      "data_simulation": {
+        "dataset": "femnist",
+        "samples_per_client": 226,
+        "partition_strategy": "iid"
+      }
+    }
+  }
+]
