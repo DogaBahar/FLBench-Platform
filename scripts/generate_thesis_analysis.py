@@ -38,8 +38,11 @@ accuracy (which isn't wall-clock-dependent).
 Known data-quality issue #3: cpu_usage_percent was measured via bare
 psutil.cpu_percent() (system-wide host load, not this process's own usage)
 in all three adapters until this was caught and fixed to
-Process().cpu_percent(). No run collected before the fix has valid data for
-this field -- it's excluded from all figures/stats here, not just filtered.
+Process().cpu_percent(). See CPU_CLEAN_CUTOFF -- runs before it have
+implausible near-zero values and are filtered out of CPU figures/stats only
+(not excluded from anything else). As of the last rerun, FedML has not yet
+been rerun post-fix, so it may be absent from the CPU comparison specifically
+even though it appears normally everywhere else.
 """
 import argparse
 import glob
@@ -84,6 +87,26 @@ def clean_timing_subset(df: pd.DataFrame) -> pd.DataFrame:
         print(f"(timing figures/stats only) excluding {dropped} pre-fix NVFlare run(s) "
               f"with contaminated timing data, started before {NVFLARE_TIMING_CLEAN_CUTOFF}")
     return df[~is_stale_nvflare].copy()
+
+
+# Runs started before this timestamp used the buggy system-wide
+# psutil.cpu_percent() measurement (see module docstring #3) in all three
+# adapters -- their cpu_usage_percent is not this process's own usage and
+# isn't comparable to post-fix runs. Empirically identified: values jump from
+# an implausible <3% (system-wide load on an idle 256-core host) to a
+# consistent, plausible 10-20% range at this exact point across frameworks.
+# Unlike NVFLARE_TIMING_CLEAN_CUTOFF, this bug affected all three adapters
+# identically, so the filter applies globally, not to one framework.
+CPU_CLEAN_CUTOFF = pd.Timestamp("2026-08-24 23:26:00")
+
+
+def clean_cpu_subset(df: pd.DataFrame) -> pd.DataFrame:
+    is_stale = df["started_at"] < CPU_CLEAN_CUTOFF
+    dropped = is_stale.sum()
+    if dropped:
+        print(f"(CPU figures/stats only) excluding {dropped} pre-fix run(s) with invalid "
+              f"system-wide CPU measurement, started before {CPU_CLEAN_CUTOFF}")
+    return df[~is_stale].copy()
 
 
 def load_results(results_dir: str) -> pd.DataFrame:
@@ -177,6 +200,28 @@ def exclude_truncated(df: pd.DataFrame) -> pd.DataFrame:
             direction = "under" if row["n_rounds_logged"] < row["rounds"] else "OVER"
             print(f"  - {row['run_id']} (configured {row['rounds']}, logged {row['n_rounds_logged']}, {direction}-counted)")
     return df[~bad].copy()
+
+
+CONFIG_IDENTITY_COLS = ["framework", "dataset", "clients", "rounds", "samples_per_client",
+                         "partition_strategy", "strategy", "alpha", "shards_per_client"]
+
+
+def dedupe_latest_per_config(df: pd.DataFrame) -> pd.DataFrame:
+    # Reruns (e.g. scripts/reconcile_sweep.py output, or a manual rerun of a
+    # subset of configs) land as new run_ids alongside the originals -- nothing
+    # in results/ ever gets overwritten. Left as-is, every stat/figure here
+    # would silently average old and new runs of the *same* config together,
+    # which is wrong in two ways: it inflates n (double-counting one config as
+    # two data points) and, worse, mixes runs from before/after a code fix
+    # (e.g. the CPU-measurement fix, or NVFlare's thread-cap fix) as if they
+    # were independent replicates of the same measurement. Keep only the most
+    # recently started run per unique config.
+    before = len(df)
+    df = df.sort_values("started_at").drop_duplicates(subset=CONFIG_IDENTITY_COLS, keep="last")
+    dropped = before - len(df)
+    if dropped:
+        print(f"Deduplicated {dropped} older rerun-superseded run(s), keeping the latest per config")
+    return df
 
 
 def fig_accuracy_by_framework(base: pd.DataFrame, out_dir: str):
@@ -360,6 +405,35 @@ def fig_aggregation_time_by_framework(clean: pd.DataFrame, out_dir: str):
     plt.close(fig)
 
 
+def fig_cpu_by_framework(clean: pd.DataFrame, out_dir: str):
+    cpu = clean_cpu_subset(clean)
+    base = cpu[(cpu["partition_strategy"] == "iid") & (cpu["strategy"] == "FedAvg")]
+    frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
+    if not frameworks:
+        print("No post-CPU-fix runs available yet -- skipping fig9.")
+        return
+    pal = {FW_LABEL[f]: PALETTE[f] for f in frameworks}
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    sns.boxplot(data=base, x="dataset_label", y="avg_cpu_usage_percent", hue="framework_label",
+                palette=pal, ax=ax, showfliers=False, width=0.6)
+    sns.stripplot(data=base, x="dataset_label", y="avg_cpu_usage_percent", hue="framework_label",
+                  dodge=True, palette=pal, ax=ax, alpha=0.5, size=4, legend=False,
+                  edgecolor="white", linewidth=0.3)
+    ax.set_xlabel("")
+    ax.set_ylabel("Avg. client CPU usage (%)")
+    missing = [FW_LABEL[f] for f in ["flower", "nvflare", "fedml"] if f not in frameworks]
+    subtitle = f" ({', '.join(missing)} not yet rerun post-fix)" if missing else ""
+    ax.set_title(f"Client CPU usage by framework (post-fix runs only){subtitle}")
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[:len(frameworks)], labels[:len(frameworks)], title="Framework",
+              loc="upper left", frameon=True)
+    fig.tight_layout()
+    fig.savefig(f"{out_dir}/fig9_cpu_by_framework.png", dpi=200)
+    fig.savefig(f"{out_dir}/fig9_cpu_by_framework.pdf")
+    plt.close(fig)
+
+
 def print_stats(clean: pd.DataFrame):
     base = clean[(clean["partition_strategy"] == "iid") & (clean["strategy"] == "FedAvg")]
     frameworks = [f for f in ["flower", "nvflare", "fedml"] if f in base["framework"].unique()]
@@ -408,10 +482,14 @@ def print_stats(clean: pd.DataFrame):
     print("\nNote: avg_comm_size_mb is identical across all frameworks (raw serialized parameter "
           "size of the same shared model architecture, not actual wire-protocol overhead) -- not "
           "a differentiating metric, omitted from figures.")
-    print("Note: cpu_usage_percent is excluded entirely. Historically measured via bare "
-          "psutil.cpu_percent() (system-wide load, not this process's own usage) in all three "
-          "adapters -- fixed to Process().cpu_percent() going forward, but no existing run has "
-          "valid data for this field.")
+    cpu = clean_cpu_subset(clean)
+    cpu_base = cpu[(cpu["partition_strategy"] == "iid") & (cpu["strategy"] == "FedAvg")]
+    if len(cpu_base):
+        print("\n=== CPU: avg client usage (%) -- post-fix runs only (see CPU_CLEAN_CUTOFF) ===")
+        print(cpu_base.groupby(["framework", "dataset"])["avg_cpu_usage_percent"]
+              .agg(["mean", "std", "min", "max", "count"]).round(2))
+    else:
+        print("\nNote: cpu_usage_percent has no valid post-fix data yet.")
 
 
 def main():
@@ -426,6 +504,7 @@ def main():
     df = load_results(args.results_dir)
     print(f"Loaded {len(df)} completed runs from {args.results_dir}/")
     clean = exclude_truncated(df)
+    clean = dedupe_latest_per_config(clean)
     print(f"Clean dataset: {len(clean)} runs")
 
     clean["framework_label"] = clean["framework"].map(FW_LABEL)
@@ -455,6 +534,7 @@ def main():
     fig_heterogeneity(clean, args.out_dir)
     fig_ram_by_framework(base, args.out_dir)
     fig_aggregation_time_by_framework(clean, args.out_dir)
+    fig_cpu_by_framework(clean, args.out_dir)
     print(f"\nFigures + CSVs written to {args.out_dir}/")
 
     print_stats(clean)
