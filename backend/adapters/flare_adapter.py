@@ -159,7 +159,18 @@ def main():
     model = get_model()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    
+
+    with open("/app/workspace/metrics.jsonl", "a") as f:
+        f.write(json.dumps({{
+            "type": "gpu_diagnostic",
+            "client_id": f"client_{{client_id}}",
+            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+            "nvidia_visible_devices": os.environ.get("NVIDIA_VISIBLE_DEVICES"),
+            "cuda_available": torch.cuda.is_available(),
+            "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+            "device": str(device)
+        }}) + "\\n")
+
     trainloader, testloader = load_data(
         partition_strategy="{partition_strategy}",
         samples_per_client={samples_per_client},
