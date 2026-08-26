@@ -54,9 +54,9 @@ class DockerOrchestrator:
                     environment=env_vars
                 )
                 if config.USE_GPU:
-                    run_kwargs["device_requests"] = [
-                        docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])
-                    ]
+                    run_kwargs["runtime"] = "nvidia"
+                    env_vars["NVIDIA_VISIBLE_DEVICES"] = "all"
+                    env_vars["NVIDIA_DRIVER_CAPABILITIES"] = "all"
 
                 container = self.client.containers.run(**run_kwargs)
                 containers.append(container)
