@@ -3,6 +3,7 @@ import json
 import shutil
 from typing import Dict, Any, List
 from adapters.base import FLFrameworkAdapter
+from core.config import config as app_config
 
 class FedMLAdapter(FLFrameworkAdapter):
     
@@ -65,6 +66,11 @@ train_args:
   client_optimizer: "{optimizer_name}"
   learning_rate: {learning_rate}
   fedprox_mu: {proximal_mu}
+
+device_args:
+  worker_num: {num_clients}
+  using_gpu: {str(app_config.USE_GPU).lower()}
+  gpu_id: 0
 
 validation_args:
   frequency_of_the_test: 1

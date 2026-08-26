@@ -3,10 +3,8 @@ import json
 import shutil
 from typing import Dict, Any, List
 from adapters.base import FLFrameworkAdapter
+from core.config import config as app_config
 
-# NVFlare's PTFileModelPersistor builds the global FlexibleCNN from this JSON
-# config directly (it can't call each dataset's get_model() factory), so its
-# shape has to be kept in sync with datasets/<dataset>/model.py by hand.
 DATASET_MODEL_SHAPES = {
     "cifar100": {"in_channels": 3, "num_classes": 100},
     "femnist": {"in_channels": 1, "num_classes": 62},
@@ -52,7 +50,7 @@ class FlareAdapter(FLFrameworkAdapter):
 
         meta_config = {
             "name": "benchmark_job",
-            "resource_spec": {"site-1": {"num_gpus": 0}},
+            "resource_spec": {"site-1": {"num_gpus": 1 if app_config.USE_GPU else 0}},
             "deploy_map": {"app": ["@ALL"]}
         }
         with open(os.path.join(job_dir, "meta.json"), "w") as f:
@@ -310,12 +308,6 @@ import json
 import psutil
 
 def log_client_metrics(client_id, round_num, compute_time, comm_mb):
-    # psutil.cpu_percent() with no Process target is system-wide (whatever
-    # else happens to be running on the host), not this process's own usage.
-    # Process().cpu_percent(interval=None) would be process-scoped but needs
-    # a prior call on the *same* Process object to baseline against -- a
-    # fresh object here every call would just always read 0.0 -- so block
-    # briefly instead to measure synchronously regardless of prior state.
     cpu_usage = psutil.Process().cpu_percent(interval=0.1)
     ram_usage = psutil.Process().memory_info().rss / (1024 * 1024)
 
