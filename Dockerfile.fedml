@@ -5,9 +5,8 @@ WORKDIR /app
 # Install git and system dependencies required for MPI/gRPC compilation
 RUN apt-get update && apt-get install -y git build-essential && rm -rf /var/lib/apt/lists/*
 
-# Install FedML and our core ML stack
 RUN pip install --no-cache-dir \
-    --extra-index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://download.pytorch.org/whl/cu121 \
     torch torchvision && \
     pip install --no-cache-dir \
     datasets \

@@ -206,12 +206,6 @@ def main(grid, context: Context) -> None:
         with open(os.path.join(output_dir, "server_app.py"), "w") as f:
             f.write(server_app_code)
 
-        # --- client_app.py ---
-        # context.node_config["partition-id"]/["num-partitions"] are populated
-        # automatically by the Simulation Engine per simulated client based on
-        # `options.num-supernodes` above -- no manual per-client wiring needed
-        # (unlike the Deployment Engine's --node-config, which this adapter
-        # does not use).
         client_app_code = """
 import time
 import torch
@@ -259,6 +253,9 @@ def train_fn(msg: Message, context: Context):
     model = get_model()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
     mu = float(run_config["proximal-mu"])
     global_params = [p.detach().clone() for p in model.parameters()] if mu > 0 else None
 
@@ -296,6 +293,7 @@ def evaluate_fn(msg: Message, context: Context):
 
     model = get_model()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
+    model.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
     loss, accuracy = test(model, testloader)
     metrics = MetricRecord({

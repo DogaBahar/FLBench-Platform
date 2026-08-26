@@ -21,5 +21,6 @@ class Config:
     
     SHARED_RUN_DIR = os.getenv("SHARED_RUN_DIR", "/tmp/fl_benchmark_runs")
     DATA_CACHE_DIR = os.getenv("DATA_CACHE_DIR", "/tmp/fl_benchmark_data")
+    USE_GPU = os.getenv("USE_GPU", "false").lower() == "true"
 
 config = Config()

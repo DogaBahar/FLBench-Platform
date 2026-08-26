@@ -28,15 +28,6 @@ class DockerOrchestrator:
                     "RUN_ID": run_id,
                     "HF_DATASETS_CACHE": "/app/data/huggingface",
                     "TORCH_HOME": "/app/data/torch",
-                    # Without this, torch/OpenMP defaults to one thread per
-                    # visible host core -- on a many-core host that's
-                    # thousands of threads per container, and several
-                    # concurrent runs (e.g. a redelivered/retried task
-                    # racing the original, see services/tasks.py's
-                    # task_acks_late) turns into severe oversubscription
-                    # that starves everything, including the Docker daemon
-                    # itself, making the APIError/ConnectionError retries
-                    # that cause that race more likely in the first place.
                     "OMP_NUM_THREADS": "4",
                     "MKL_NUM_THREADS": "4",
                 }
@@ -44,16 +35,12 @@ class DockerOrchestrator:
                     env_vars.update(spec["env"])
 
                 container_name = f"run_{run_id}_{spec['name']}"
-                # Make launches idempotent: a retried/redelivered task (see
-                # task_acks_late in services/tasks.py) could be re-running a
-                # run_id whose containers from a prior, uncleanly-killed
-                # attempt are still sitting around under this same name.
                 try:
                     self.client.containers.get(container_name).remove(force=True)
                 except docker.errors.NotFound:
                     pass
 
-                container = self.client.containers.run(
+                run_kwargs = dict(
                     image=spec["image"],
                     command=spec["command"],
                     name=container_name,
@@ -66,6 +53,12 @@ class DockerOrchestrator:
                     detach=True,
                     environment=env_vars
                 )
+                if config.USE_GPU:
+                    run_kwargs["device_requests"] = [
+                        docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])
+                    ]
+
+                container = self.client.containers.run(**run_kwargs)
                 containers.append(container)
                 
                 if spec['name'] == 'server':
