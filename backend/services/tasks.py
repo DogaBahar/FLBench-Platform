@@ -28,6 +28,16 @@ celery_app = Celery(
 celery_app.conf.task_acks_late = True
 celery_app.conf.worker_prefetch_multiplier = 1
 
+# Redis's default visibility_timeout (1hr) is shorter than some legitimate
+# benchmark runs (e.g. high round-count sweeps), which combined with
+# task_acks_late=True above caused a real bug: a still-running task gets
+# treated as lost and redelivered to another worker, which recreates the
+# run's containers mid-flight and truncates its round count (see
+# scripts/generate_thesis_analysis.py's module docstring for the data-quality
+# fallout this caused). Set generously above the longest run this platform is
+# expected to attempt.
+celery_app.conf.broker_transport_options = {"visibility_timeout": 6 * 60 * 60}
+
 
 def _persist_round_metrics(run_id: str, telemetry_data: dict) -> None:
     """
